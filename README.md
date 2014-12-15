@@ -20,7 +20,7 @@ HTML5.
 First download the git repo and run make:
 
 ```Shell
-> git clone ...
+> git clone https://github.com/ricardobcl/HTML5-Speedy-Video-Extension.git
 > cd HTML5-Speedy-Video-Extension
 > make
 ```
