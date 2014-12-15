@@ -28,7 +28,7 @@ Then:
 
 #### For Chrome
 
-Go to [chrome extensions page](chrome://extensions/) and click "Load unpacked
+Go to chrome extensions page (chrome://extensions/) and click "Load unpacked
 extension..." and select the folder **HTML5 Speedy Video Chrome** of this
 project.
 
