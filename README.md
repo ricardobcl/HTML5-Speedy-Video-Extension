@@ -28,9 +28,9 @@ Then:
 
 #### For Chrome
 
-Go to chrome extensions page (chrome://extensions/) and click "Load unpacked
-extension..." and select the folder **HTML5 Speedy Video Chrome** of this
-project.
+Go to chrome extensions page (chrome://extensions/) and enable `Developer Mode`
+on the top right corner. Then click `Load unpacked extension...` and select
+the folder `HTML5 Speedy Video Chrome` of this project.
 
 ![Chrome Extensions](screenshots/chrome_ext.png)
 
@@ -46,12 +46,12 @@ project.
 2. **Open Extension Builder**
 
     Enable developer options in safari and then open the Extension Builder in
-    the menu "Develop"
+    the menu `Develop`
     ([here's](https://developer.apple.com/library/safari/documentatio n/Tools/Co
     nceptual/SafariExtensionGuide/UsingExtensionBuilder/UsingExtensionBuil
-    der.html) a quick visual guide). Then you click on the "+" buttom and select
-    "Add Extension..." and select the folder **HTML5 Speedy
-    Video.safariextension** of this project. Finally, just click "Install" in
+    der.html) a quick visual guide). Then you click on the `+` button and select
+    `Add Extension...` and select the folder `HTML5 Speedy
+    Video.safariextension` of this project. Finally, just click `Install` in
     the top right corner to install the extension.
 
 ![Safari Extension Builder](screenshots/safari_ext_builder.png)
