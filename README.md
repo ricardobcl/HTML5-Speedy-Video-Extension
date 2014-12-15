@@ -87,8 +87,8 @@ It also adds these simple keyboard shortcuts:
 
 Key             | Action
 ---             | ---
-+               | Speed up
--               | Slow down
++               | Speed up by 0.2x
+-               | Slow down by 0.2x
 0 or 1          | Reset speed to 1x
 2               | Set speed to 2x
 3               | Set speed to 3x
