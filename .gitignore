@@ -1,0 +1,5 @@
+.DS_Store
+HTML5\ Speedy\ Video.safariextension/*
+!HTML5\ Speedy\ Video.safariextension/Info.plist
+HTML5\ Speedy\ Video\ Chrome/*
+!HTML5\ Speedy\ Video\ Chrome/manifest.json

@@ -1,0 +1,26 @@
+{
+    "manifest_version": 2,
+
+    "name": "HTML5 Speedy Video",
+    "version": "1.0",
+    "description": "This extension adds fine-grained playback speed control on HTML5 videos.",
+    "offline_enabled": true,
+
+    "icons": {  "32":  "icons/Icon-32.png",
+                "64":  "icons/Icon-64.png",
+                "128":  "icons/Icon-128.png",
+                "256":  "icons/Icon-256.png"},
+
+    "content_scripts": [
+        {
+            "matches": ["http://kissanime.com/Anime/*",
+                        "http://www.youtube.com/watch*",
+                        "https://www.youtube.com/watch*"],
+            "run_at": "document_idle",
+            "css": ["style.css"],
+            "js": [ "jquery-2.1.1.min.js",
+                    "speedy.js"]
+        }
+    ]
+
+}

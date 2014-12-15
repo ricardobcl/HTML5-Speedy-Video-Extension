@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Author</key>
+	<string>Ricardo Gonçalves</string>
+	<key>Builder Version</key>
+	<string>10600.2.5</string>
+	<key>CFBundleDisplayName</key>
+	<string>HTML5 Speedy Video</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.yourcompany.html5speedyvideo</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>Chrome</key>
+	<dict/>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>End</key>
+			<array>
+				<string>speedy.js</string>
+			</array>
+			<key>Start</key>
+			<array>
+				<string>jquery-2.1.1.min.js</string>
+			</array>
+		</dict>
+		<key>Stylesheets</key>
+		<array>
+			<string>style.css</string>
+		</array>
+		<key>Whitelist</key>
+		<array>
+			<string>http://kissanime.com/Anime/*</string>
+			<string>https://www.youtube.com/watch*</string>
+			<string>http://www.youtube.com/watch*</string>
+		</array>
+	</dict>
+	<key>Description</key>
+	<string>This extension adds fine-grained playback speed control on HTML5 videos.</string>
+	<key>DeveloperIdentifier</key>
+	<string>X46Q2C3D98</string>
+	<key>ExtensionInfoDictionaryVersion</key>
+	<string>1.0</string>
+	<key>Permissions</key>
+	<dict>
+		<key>Website Access</key>
+		<dict>
+			<key>Include Secure Pages</key>
+			<true/>
+			<key>Level</key>
+			<string>All</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
