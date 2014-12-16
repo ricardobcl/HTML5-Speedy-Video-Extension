@@ -15,6 +15,10 @@ HTML5.
 ![VideoJS Player](screenshots/vjs_player.png)
 
 
+**NOTE**: Chrome is easier to install, but safari on a mac is *much* more CPU
+efficient at video playback and in general. That's why I included a safari
+version.
+
 ## Installing
 
 First download the git repo and run make:
