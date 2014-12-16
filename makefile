@@ -5,9 +5,9 @@ GREEN = \033[0;32m
 BOLD = \033[1m
 PLAIN = \033[0m
 
-.: all
+no_target: notarget all
 
-all: notarget chrome safari
+all: chrome safari
 
 notarget:
 	@ echo "${CYAN}${BOLD}Note:${PLAIN}${CYAN} No target specified for make; building all targets.${PLAIN}"
