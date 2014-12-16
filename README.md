@@ -26,15 +26,19 @@ First download the git repo and run make:
 ```Shell
 > git clone https://github.com/ricardobcl/HTML5-Speedy-Video-Extension.git
 > cd HTML5-Speedy-Video-Extension
-> make
+> make # builds both extensions
+> make chrome # builds chrome extension
+> make safari # builds safari extension
 ```
 Then:
 
 #### For Chrome
 
 Go to chrome extensions page (chrome://extensions/) and enable `Developer Mode`
-on the top right corner. Then click `Load unpacked extension...` and select
-the folder `HTML5 Speedy Video Chrome` of this project.
+on the top right corner. Then click `Load unpacked extension...` and select the
+folder `HTML5 Speedy Video Chrome` of this project. Finally, you have to force a
+refresh (`cmd + shift + r` or `ctrl + shift + r`) or restart the browser the
+first time after loading the extension.
 
 ![Chrome Extensions](screenshots/chrome_ext.png)
 
@@ -55,8 +59,10 @@ the folder `HTML5 Speedy Video Chrome` of this project.
     nceptual/SafariExtensionGuide/UsingExtensionBuilder/UsingExtensionBuil
     der.html) a quick visual guide). Then you click on the `+` button and select
     `Add Extension...` and select the folder `HTML5 Speedy
-    Video.safariextension` of this project. Finally, just click `Install` in
-    the top right corner to install the extension.
+    Video.safariextension` of this project. Then, just click `Install` in     the
+    top right corner to install the extension, and finally, force a refresh (`cmd +
+    shift + r` or `ctrl + shift + r`) or restart the browser the first time after
+    loading the extension.
 
 ![Safari Extension Builder](screenshots/safari_ext_builder.png)
 
