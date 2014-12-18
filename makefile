@@ -10,19 +10,19 @@ no_target: notarget all
 all: chrome safari
 
 notarget:
-	@ echo "${CYAN}${BOLD}Note:${PLAIN}${CYAN} No target specified for make; building all targets.${PLAIN}"
+	@ echo "$(CYAN)$(BOLD)Note:$(PLAIN)$(CYAN) No target specified for make; building all targets.$(PLAIN)"
 
 chrome: clean_chrome
 	@ echo "> Copying files to Chrome extention folder..."
 	@ cp -R icons $(CHROME)/icons
 	@ cd src; cp speedy.js style.css jquery-2.1.1.min.js ../$(CHROME)
-	@ echo "${GREEN}Chrome extention is ready!${PLAIN}"
+	@ echo "$(GREEN)Chrome extention is ready!$(PLAIN)"
 
 safari: clean_safari
 	@ echo "> Copying files to Safari extention folder..."
 	@ cp icons/* $(SAFARI)
 	@ cd src; cp speedy.js style.css jquery-2.1.1.min.js ../$(SAFARI)
-	@ echo "${GREEN}Safari extention is ready!${PLAIN}"
+	@ echo "$(GREEN)Safari extention is ready!$(PLAIN)"
 
 clean: clean_chrome clean_safari
 	@ rm -f  .DS_Store
