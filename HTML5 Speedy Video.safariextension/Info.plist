@@ -38,6 +38,7 @@
 		<key>Whitelist</key>
 		<array>
 			<string>http://kissanime.com/Anime/*</string>
+			<string>http://kissanime.to/Anime/*</string>
 			<string>https://www.youtube.com/watch*</string>
 			<string>http://www.youtube.com/watch*</string>
 		</array>

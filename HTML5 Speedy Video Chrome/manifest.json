@@ -14,6 +14,7 @@
     "content_scripts": [
         {
             "matches": ["http://kissanime.com/Anime/*",
+                        "http://kissanime.to/Anime/*",
                         "http://www.youtube.com/watch*",
                         "https://www.youtube.com/watch*"],
             "run_at": "document_idle",
