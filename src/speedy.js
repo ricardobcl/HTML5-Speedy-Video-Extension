@@ -5,13 +5,14 @@ var default_delta = 0.2; // smallest increment or decrement of playback speed
 var default_skip_small = 2; // number of seconds to (small) skip or rewind the video
 var default_skip_big = 10; // number of seconds to (big) skip or rewind the video
 var default_autoplay = false; // flag for autoplay the video
-var debug = true; // flag to disable or enable console log debug info
+var debug = false; // flag to disable or enable console log debug info
 var default_stop_video_timeout = 15000; // timeout in milliseconds before stop pausing the video
 var max_tries_finding_video = 150; // max number of tries to finding the video
-var youtube_playerbar_name_class = ".html5-player-chrome"; // name class of youtube player bar
+var youtube_playerbar_name_class = ".ytp-chrome-controls"; // name class of youtube player bar
 var videojs_playerbar_name_class = ".vjs-control-bar"; // name class of VideoJS player bar
-// var netflix_playerbar_name_class = ".player-control-bar"; // name class of Netflix player bar
 var netflix_playerbar_name_class = ".player-status"; // name class of Netflix player bar
+var faster_text = "&#9758;";
+var slower_text = "&#9756;";
 
 // internal variables
 var tries = 0;
@@ -20,12 +21,24 @@ var ignore_keyshorts = false;
 var timeout_finding_video;
 var timeout_pausing_video;
 var timeout_finding_status_bar;
-var oldLocation = window.location.href;
+var currentURL = window.location.href;
+
+// var observer = new MutationObserver(function(changes) {
+//     changes.forEach(function(change) {
+//         log("type: " + change.type);
+//         log("name: " + change.name);
+//         log("old value: " + change.oldValues);
+//     })
+// });
+// observer.observe($("#watch-discussion"), {childList: true, subtree: true, attributes: true });
 
 // necessary test to only launch the extension 1 time per page (at least on safari)
 if (window.top === window) {
     log("Starting Speedy Video");
-    if (oldLocation.indexOf("watch") >= 0 || oldLocation.indexOf("Anime") >= 0 ) {
+    // turn ON autoplay for netflix
+    if (at_netflix()) { default_autoplay = true; }
+    // check if we are in the sub-page that's supposed to have a video tag -> this avoid the keyshorts messing with the page
+    if (currentURL.indexOf("watch") >= 0 || currentURL.indexOf("Anime") >= 0 ) {
         // try running setup() 4 times per second until we find the video tag or reach
         // the maximum number of tries 'max_tries_finding_video'
         timeout_finding_video = window.setInterval(setup, 250);
@@ -35,13 +48,14 @@ if (window.top === window) {
     window.setInterval(check_changed_url, 100);
 }
 
+
 function check_changed_url() {
-    if(window.location.href != oldLocation) {
-        log("old: " + oldLocation);
+    if(window.location.href != currentURL) {
+        log("old: " + currentURL);
         log("new :" + window.location.href);
         // update new url
-        oldLocation = window.location.href
-        if (oldLocation.indexOf("watch") >= 0 || oldLocation.indexOf("Anime") >= 0 ) {
+        currentURL = window.location.href
+        if (currentURL.indexOf("watch") >= 0 || currentURL.indexOf("Anime") >= 0 ) {
             // try finding a new video tag
             clearInterval(timeout_pausing_video);
             clearInterval(timeout_finding_video);
@@ -115,10 +129,10 @@ function add_buttons_player() {
         $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(youtube_playerbar_name_class);
         $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(videojs_playerbar_name_class);
         $("<span id=\"speedy_extension_addon_2_player\"></span>").appendTo(netflix_playerbar_name_class);
-        $("<button id=\"speedy_speed_down\" class=\"button\">--</button>").appendTo("#speedy_extension_addon_2_player");
-        $("<b class=\"tag\"><span id=\"speedy_video_speed\">1.00</span>x</b>").appendTo("#speedy_extension_addon_2_player");
-        $("<button id=\"speedy_speed_up\" class=\"button\">++</button>").appendTo("#speedy_extension_addon_2_player");
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(2));
+        $("<button id=\"speedy_speed_down\" class=\"speedy_button left_button\">"+slower_text+"</button>").appendTo("#speedy_extension_addon_2_player");
+        $("<b class=\"speedy_tag\"><span id=\"speedy_video_speed\">1.0</span> X</b>").appendTo("#speedy_extension_addon_2_player");
+        $("<button id=\"speedy_speed_up\" class=\"speedy_button\">"+faster_text+"</button>").appendTo("#speedy_extension_addon_2_player");
+        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
         $("#speedy_speed_down").click(function() { delta_speed( - default_delta); });
         $("#speedy_speed_up" ).click(function() { delta_speed( + default_delta); });
     } else {
@@ -128,12 +142,12 @@ function add_buttons_player() {
 
 function delta_speed(x){
         my_video.playbackRate+=x;
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(2));
+        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
 }
 
 function absolute_speed(x){
         my_video.playbackRate=x;
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(2));
+        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
 }
 
 function setup_shorcuts() {
@@ -166,10 +180,10 @@ function setup_shorcuts() {
                     log_prevent("speed 3",event);
                     absolute_speed(3);
                     break;
-                case 82 : // r
-                    log_prevent("replay",event);
-                    if (my_video.ended) { my_video.play(); }
-                    break;
+                // case 82 : // r
+                //     log_prevent("replay",event);
+                //     if (my_video.ended) { my_video.play(); }
+                //     break;
                 case 32 : // space
                     log_prevent("space",event);
                     clearInterval(timeout_pausing_video);
@@ -177,18 +191,22 @@ function setup_shorcuts() {
                     else {  my_video.pause(); }
                     break;
                 case 39 : // right arrow
+                    if (at_netflix()) {break;} // this crashes the netflix page
                     log_prevent("right",event);
                     my_video.currentTime+=default_skip_small;
                     break;
                 case 37 : // left arrow
+                    if (at_netflix()) {break;} // this crashes the netflix page
                     log_prevent("left",event);
                     my_video.currentTime-=default_skip_small;
                     break;
                 case 38 : // up arrow
+                    if (at_netflix()) {break;} // this crashes the netflix page
                     log_prevent("up",event);
                     my_video.currentTime+=default_skip_big;
                     break;
                 case 40 : // down arrow
+                    if (at_netflix()) {break;} // this crashes the netflix page
                     log_prevent("down",event);
                     my_video.currentTime-=default_skip_big;
                     break;
@@ -201,7 +219,7 @@ function setup_shorcuts() {
                     } else {
                         log("Entering fullscreen.");
                         var full_videojs = $(".vjs-fullscreen-control")[0];
-                        var full_youtube = $(".ytp-button-fullscreen-enter")[0];
+                        var full_youtube = $(".ytp-fullscreen-button");
                         if(full_videojs !== undefined) {
                             eventFire(full_videojs, "click");
                         } else if (full_youtube !== undefined) {
@@ -248,6 +266,12 @@ function log(string) {
     }
 }
 
-
+function at_netflix() {
+    if (currentURL.indexOf("netflix") >= 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
 
 

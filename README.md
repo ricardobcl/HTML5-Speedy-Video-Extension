@@ -1,18 +1,21 @@
 # HTML5 Speedy Video Extension (for Chrome and Safari)
 
-A browser extension that is the easiest way of getting more control over
-playback speed of videos on youtube or websites that use VideoJS HTML5 player.
-It also provides some easy and fast shortcuts for video manipulation. Works on
-Chrome and Safari (last tested on Chrome 40 and SAfari 8), when the player is
-HTML5.
+A browser extension that is the easiest way to get more control over playback
+speed of videos on Netflix, Youtube or websites that use VideoJS HTML5 player.
+It also provides some easy shortcuts for video manipulation. Works on Chrome and
+Safari (last tested on Chrome 40 and Safari 8), when the player is HTML5.
+
+**Netflix**
+
+![Youtube Player](screenshots/netflix.png)
 
 **Youtube**
 
-![Youtube Player](screenshots/yt_player.png)
+![Youtube Player](screenshots/youtube.png)
 
 **VideoJS**
 
-![VideoJS Player](screenshots/vjs_player.png)
+![VideoJS Player](screenshots/videojs.png)
 
 
 **NOTE**: Chrome is easier to install, but safari on a mac is *much* more CPU
@@ -21,28 +24,28 @@ version.
 
 ## Installing
 
-First download the git repo and run make:
+Run this on the terminal:
 
 ```Shell
 > git clone https://github.com/ricardobcl/HTML5-Speedy-Video-Extension.git
 > cd HTML5-Speedy-Video-Extension
-> make # builds both extensions
-> make chrome # builds chrome extension
-> make safari # builds safari extension
+> make
 ```
+
 Then:
 
 #### For Chrome
 
 Go to chrome extensions page (chrome://extensions/) and enable `Developer Mode`
 on the top right corner. Then click `Load unpacked extension...` and select the
-folder `HTML5 Speedy Video Chrome` of this project. Finally, you have to force a
-refresh (`cmd + shift + r` or `ctrl + shift + r`) or restart the browser the
-first time after loading the extension.
+folder `HTML5 Speedy Video Chrome` of this project.
 
 ![Chrome Extensions](screenshots/chrome_ext.png)
 
 #### For Safari
+
+**2016 Update:** I think Apple doesn't provide free Safari Developer Accounts anymore.
+Therefore, you have to pay for a developer account or use Chrome.
 
 1. **Get Safari Developer Certificate**
 
@@ -78,9 +81,12 @@ var default_skip_big = 10; // number of seconds to (big) skip or rewind the vide
 var default_autoplay = false; // flag for autoplay the video
 var debug = false; // flag to disable or enable console log debug info
 var default_stop_video_timeout = 15000; // timeout in milliseconds before stop pausing the video
-var max_tries_finding_video = 25; // max number of tries to finding the video
-var youtube_playerbar_name_class = ".html5-player-chrome"; // name class of youtube player bar 
-var videojs_playerbar_name_class = ".vjs-control-bar"; // name class of VideoJS player bar 
+var max_tries_finding_video = 150; // max number of tries to finding the video
+var youtube_playerbar_name_class = ".ytp-chrome-controls"; // name class of youtube player bar
+var videojs_playerbar_name_class = ".vjs-control-bar"; // name class of VideoJS player bar
+var netflix_playerbar_name_class = ".player-status"; // name class of Netflix player bar
+var faster_text = "&#9758;";
+var slower_text = "&#9756;";
 ```
 
 Also, you can change which pages this extension runs by changing
@@ -101,19 +107,21 @@ Key             | Action
 -               | Slow down by 0.2x
 0 or 1          | Reset speed to 1x
 2               | Set speed to 2x
-3               | Set speed to 3x
-r               | Replay
+3               | Set speed to 2.5x
+4               | Set speed to 3x
 f               | Full screen
 Space           | Play / Pause
-:arrow_left:    | Rewind 2 seconds
-:arrow_right:   | Skip 2 seconds
-:arrow_down:    | Rewind 10 seconds
-:arrow_up:      | Skip 10 seconds
-
+:arrow_left:    | \*\* Rewind 2 seconds
+:arrow_right:   | \*\* Skip 2 seconds
+:arrow_down:    | \*\* Rewind 10 seconds
+:arrow_up:      | \*\* Skip 10 seconds
 
 
 They are hard-coded, but it's really simple to modify if you want in
 `speedy.js`.
+
+\*\* Not on Netflix, although they do skip and rewind by default anyway, just
+not these amounts.
 
 ## Forcing HTML5 Player:
 

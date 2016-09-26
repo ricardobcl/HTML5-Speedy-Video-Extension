@@ -2,7 +2,7 @@
     "manifest_version": 2,
 
     "name": "HTML5 Speedy Video",
-    "version": "1.0",
+    "version": "1.1",
     "description": "This extension adds fine-grained playback speed control on HTML5 videos.",
     "offline_enabled": true,
 
