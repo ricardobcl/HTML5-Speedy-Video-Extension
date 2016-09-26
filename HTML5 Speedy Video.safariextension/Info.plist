@@ -5,7 +5,7 @@
 	<key>Author</key>
 	<string>Ricardo Gonçalves</string>
 	<key>Builder Version</key>
-	<string>10600.2.5</string>
+	<string>11602.1.50.0.10</string>
 	<key>CFBundleDisplayName</key>
 	<string>HTML5 Speedy Video</string>
 	<key>CFBundleIdentifier</key>
@@ -39,14 +39,19 @@
 		<array>
 			<string>http://kissanime.com/Anime/*</string>
 			<string>http://kissanime.to/Anime/*</string>
-			<string>https://www.youtube.com/watch*</string>
-			<string>http://www.youtube.com/watch*</string>
+			<string>https://kissanime.to/Anime/*</string>
+			<string>http://www.youtube.com/*</string>
+			<string>https://www.youtube.com/*</string>
+			<string>http://www.netflix.com/*</string>
+			<string>https://www.netflix.com/*</string>
+			<string>http://www.vimeo.com/*</string>
+			<string>https://www.vimeo.com/*</string>
 		</array>
 	</dict>
 	<key>Description</key>
 	<string>This extension adds fine-grained playback speed control on HTML5 videos.</string>
 	<key>DeveloperIdentifier</key>
-	<string>X46Q2C3D98</string>
+	<string>0000000000</string>
 	<key>ExtensionInfoDictionaryVersion</key>
 	<string>1.0</string>
 	<key>Permissions</key>
