@@ -1,0 +1,36 @@
+
+.speedy_button {
+    font-size: 1.4em;
+    color: #fff;
+    text-decoration: none;
+    margin-right: 5px;
+    margin-left: 5px;
+
+    background-color: Transparent;
+    background-repeat:no-repeat;
+    border: none;
+    cursor:pointer;
+    overflow: hidden;
+    outline:none;
+}
+.speedy_button:hover, .speedy_button:active, .speedy_button:focus {
+    font-size: 1.5em;
+    box-shadow: 0 0 0.4 transparent inset;
+    background: rgba(0,0,0,0.4); /* #101010 */
+}
+
+.speedy_tag{
+    font-size: 1.0em;
+    color: #fff;
+    text-decoration: none;
+    margin-right: 2px;
+
+    -moz-border-radius: 2px;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+    padding: 2px 2px;
+}
+
+.left_button {
+    margin-left: 50px;
+}
