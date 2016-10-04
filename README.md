@@ -24,7 +24,9 @@ version.
 
 ## Installing
 
-Run this on the terminal:
+Just download this project's ZIP and unpack it.
+
+Or, you can run this on the terminal:
 
 ```Shell
 > git clone https://github.com/ricardobcl/HTML5-Speedy-Video-Extension.git
@@ -32,7 +34,7 @@ Run this on the terminal:
 > make
 ```
 
-Then:
+Then, do the following, depending on the browser you want (chrome recommended):
 
 #### For Chrome
 
