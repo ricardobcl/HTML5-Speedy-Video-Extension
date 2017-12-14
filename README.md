@@ -3,7 +3,7 @@
 A browser extension that is the easiest way to get more control over playback
 speed of videos on Netflix, Youtube or websites that use VideoJS HTML5 player.
 It also provides some easy shortcuts for video manipulation. Works on Chrome and
-Safari (last tested on Chrome 40 and Safari 8), when the player is HTML5.
+Safari (last tested on Chrome 62 and Safari 11), when the player is HTML5.
 
 **Netflix**
 
@@ -80,7 +80,7 @@ var default_speed = 1.0; // initial playback speed
 var default_delta = 0.2; // smallest increment or decrement of playback speed
 var default_skip_small = 2; // number of seconds to (small) skip or rewind the video
 var default_skip_big = 10; // number of seconds to (big) skip or rewind the video
-var default_autoplay = false; // flag for autoplay the video
+var default_autoplay = true; // flag for autoplay the video
 var debug = false; // flag to disable or enable console log debug info
 var default_stop_video_timeout = 15000; // timeout in milliseconds before stop pausing the video
 var max_tries_finding_video = 150; // max number of tries to finding the video
@@ -105,14 +105,14 @@ It also adds these simple keyboard shortcuts:
 
 Key             | Action
 ---             | ---
-+               | Speed up by 0.2x
--               | Slow down by 0.2x
-0 or 1          | Reset speed to 1x
-2               | Set speed to 2x
-3               | Set speed to 2.5x
-4               | Set speed to 3x
-f               | Full screen
-Space           | Play / Pause
+`+`             | Speed up by 0.2x
+`-`             | Slow down by 0.2x
+`0` or `1`      | Reset speed to 1x
+`2`             | Set speed to 2x
+`3`             | Set speed to 2.5x
+`4`             | Set speed to 3x
+`f`             | Full screen
+`Space`         | Play / Pause
 :arrow_left:    | \*\* Rewind 2 seconds
 :arrow_right:   | \*\* Skip 2 seconds
 :arrow_down:    | \*\* Rewind 10 seconds
