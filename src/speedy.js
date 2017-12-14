@@ -10,7 +10,7 @@ var default_stop_video_timeout = 15000; // timeout in milliseconds before stop p
 var max_tries_finding_video = 150; // max number of tries to finding the video
 var youtube_playerbar_name_class = ".ytp-chrome-controls"; // name class of youtube player bar
 var videojs_playerbar_name_class = ".vjs-control-bar"; // name class of VideoJS player bar
-var netflix_playerbar_name_class = ".player-status"; // name class of Netflix player bar
+var netflix_playerbar_name_class = ".ellipsize-text"; // name class of Netflix player bar
 var faster_text = "&#9758;";
 var slower_text = "&#9756;";
 
@@ -128,7 +128,7 @@ function add_buttons_player() {
     if($("#speedy_extension_addon_2_player")[0] == undefined) {
         $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(youtube_playerbar_name_class);
         $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(videojs_playerbar_name_class);
-        $("<span id=\"speedy_extension_addon_2_player\"></span>").appendTo(netflix_playerbar_name_class);
+        $("<span id=\"speedy_extension_addon_2_player\"></span>").prependTo(netflix_playerbar_name_class);
         $("<button id=\"speedy_speed_down\" class=\"speedy_button left_button\">"+slower_text+"</button>").appendTo("#speedy_extension_addon_2_player");
         $("<b class=\"speedy_tag\"><span id=\"speedy_video_speed\">1.0</span> X</b>").appendTo("#speedy_extension_addon_2_player");
         $("<button id=\"speedy_speed_up\" class=\"speedy_button\">"+faster_text+"</button>").appendTo("#speedy_extension_addon_2_player");
