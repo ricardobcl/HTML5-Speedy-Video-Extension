@@ -254,11 +254,7 @@ const prevent_key_event = (string, event) => {
 }
 
 const at_netflix = () => {
-  if (app.currentURL.indexOf("netflix") >= 0) {
-    return true
-  } else {
-    return false
-  }
+  return app.currentURL.indexOf("netflix") >= 0
 }
 
 app.start()
