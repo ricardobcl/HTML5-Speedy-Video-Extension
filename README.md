@@ -23,7 +23,11 @@ efficient at video playback. That's why I included a safari version.
 
 ## Download & Installing
 
-To get the extension either download directly from the releases tab or build from source.
+For Chrome, you can install the [extension in the Chrome Web Store](https://chrome.google.com/webstore/detail/html5-speedy-video/caogcofklddclhfojcbmccggaohjngmh):
+
+![Extension in Chrome's Webstore](screenshots/extension_chrome.png)
+
+If you want to install manually in your local machine, you can get the extension via direct download from the releases tab or build from source:
 
 ### Releases (easier)
 
@@ -42,7 +46,7 @@ Or, you can run this on the terminal:
 
 Then, do the following, depending on the browser you want:
 
-#### Installing For Chrome
+### Installing Locally For Chrome
 
 Go to [chrome extensions page](chrome://extensions/) and enable `Developer Mode`
 on the top right corner. Then click `Load unpacked` and select the
@@ -50,7 +54,7 @@ folder `HTML5 Speedy Video Chrome` that you obtained in the previous step.
 
 ![Chrome Extensions](screenshots/chrome_ext.png)
 
-#### Installing For Safari
+#### Installing Locally For Safari
 
 Enable developer options in safari:
 
