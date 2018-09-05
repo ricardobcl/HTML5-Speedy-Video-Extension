@@ -15,13 +15,13 @@ notarget:
 chrome: clean_chrome
 	@ echo "> Copying files to Chrome extension folder..."
 	@ cp -R icons $(CHROME)/icons
-	@ cd src; cp speedy.js style.css jquery-2.1.1.min.js ../$(CHROME)
+	@ cd src; cp speedy.js style.css ../$(CHROME)
 	@ echo "$(GREEN)Chrome extention is ready!$(PLAIN)"
 
 safari: clean_safari
 	@ echo "> Copying files to Safari extension folder..."
 	@ cp icons/* $(SAFARI)
-	@ cd src; cp speedy.js style.css jquery-2.1.1.min.js ../$(SAFARI)
+	@ cd src; cp speedy.js style.css ../$(SAFARI)
 	@ echo "$(GREEN)Safari extention is ready!$(PLAIN)"
 
 clean: clean_chrome clean_safari
@@ -30,9 +30,19 @@ clean: clean_chrome clean_safari
 clean_chrome:
 	@ echo "> Cleaning Chrome extension folder..."
 	@ rm -fr $(CHROME)/icons
-	@ rm -f  $(CHROME)/speedy.js $(CHROME)/style.css $(CHROME)/jquery-2.1.1.min.js $(CHROME)/.DS_Store
+	@ rm -f  $(CHROME)/speedy.js $(CHROME)/style.css $(CHROME)/.DS_Store
 
 clean_safari:
 	@ echo "> Cleaning Safari extension folder..."
 	@ rm -f  $(SAFARI)/Icon*
-	@ rm -f  $(SAFARI)/speedy.js $(SAFARI)/style.css $(SAFARI)/jquery-2.1.1.min.js $(SAFARI)/.DS_Store
+	@ rm -f  $(SAFARI)/speedy.js $(SAFARI)/style.css $(SAFARI)/.DS_Store
+
+release: clean_release chrome safari
+	@ zip -r SpeedySafari.zip $(SAFARI)
+	@ zip -r SpeedyChrome.zip $(CHROME)
+	@ echo "$(GREEN)Chrome and Safari extentions releases are ready!$(PLAIN)"
+
+clean_release:
+	@ echo "> Cleaning Chrome and Safari releases..."
+	@ rm -f SpeedySafari.zip
+	@ rm -f SpeedyChrome.zip

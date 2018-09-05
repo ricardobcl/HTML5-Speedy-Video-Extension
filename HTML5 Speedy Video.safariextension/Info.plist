@@ -5,7 +5,7 @@
 	<key>Author</key>
 	<string>Ricardo Gonçalves</string>
 	<key>Builder Version</key>
-	<string>12604.4.7.1.4</string>
+	<string>14606.1.36.1.9</string>
 	<key>CFBundleDisplayName</key>
 	<string>HTML5 Speedy Video</string>
 	<key>CFBundleIdentifier</key>
@@ -13,9 +13,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>2.0</string>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>Chrome</key>
 	<dict/>
 	<key>Content</key>
@@ -25,10 +25,6 @@
 			<key>End</key>
 			<array>
 				<string>speedy.js</string>
-			</array>
-			<key>Start</key>
-			<array>
-				<string>jquery-2.1.1.min.js</string>
 			</array>
 		</dict>
 		<key>Stylesheets</key>

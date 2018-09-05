@@ -1,277 +1,264 @@
+// 'app' is the main object of this extension
+const app = {
+  speed: 1.0, // initial playback speed
+  my_video: undefined,
+  currentURL: window.location.href,
+  tries: 0,
+  active_shortcuts: false,
+  interval_maintain_speed: undefined
+}
 
-// defaults
-var default_speed = 1.0; // initial playback speed
-var default_delta = 0.2; // smallest increment or decrement of playback speed
-var default_skip_small = 2; // number of seconds to (small) skip or rewind the video
-var default_skip_big = 10; // number of seconds to (big) skip or rewind the video
-var default_autoplay = true; // flag for autoplay the video
-var debug = false; // flag to disable or enable console log debug info
-var default_stop_video_timeout = 15000; // timeout in milliseconds before stop pausing the video
-var max_tries_finding_video = 150; // max number of tries to finding the video
-var youtube_playerbar_name_class = ".ytp-chrome-controls"; // name class of youtube player bar
-var videojs_playerbar_name_class = ".vjs-control-bar"; // name class of VideoJS player bar
-var netflix_playerbar_name_class = ".ellipsize-text"; // name class of Netflix player bar
-var faster_text = "&#9758;";
-var slower_text = "&#9756;";
+// the config object with default values
+app.config = {
+  default_delta: 0.2, // smallest increment or decrement of playback speed
+  default_skip_small: 2, // number of seconds to (small) skip or rewind the video
+  default_skip_big: 10, // number of seconds to (big) skip or rewind the video
+  debug: false, // flag to disable or enable console log debug info
+  max_tries_finding_video: 150, // max number of tries to finding the video
+  faster_text: "&#9758;",
+  slower_text: "&#9756;",
+  playerbar_class_name: {
+    youtube: "ytp-chrome-controls", // name class of youtube player bar
+    videojs: "vjs-control-bar", // name class of VideoJS player bar
+    netflix: "ellipsize-text" // name class of Netflix player bar
+  }
+}
 
-// internal variables
-var tries = 0;
-var my_video; // = undefined;
-var ignore_keyshorts = false;
-var timeout_finding_video;
-var timeout_pausing_video;
-var timeout_finding_status_bar;
-var currentURL = window.location.href;
+app.log = string => {
+  if (app.config.debug) {
+    console.log(`Speedy Extension: ${string}`)
+  }
+}
 
-// var observer = new MutationObserver(function(changes) {
-//     changes.forEach(function(change) {
-//         log("type: " + change.type);
-//         log("name: " + change.name);
-//         log("old value: " + change.oldValues);
-//     })
-// });
-// observer.observe($("#watch-discussion"), {childList: true, subtree: true, attributes: true });
+app.start = () => {
+  // necessary test to only launch the extension 1 time per page (at least on safari)
+  if (window.top === window) {
+    app.log("Starting Speedy Video")
+    // try running setup() 4 times per second until we find the video tag or reach
+    // the maximum number of tries 'max_tries_finding_video'
+    app.setup()
+    app.timeout_finding_video = setInterval(app.setup, 250)
+    setInterval(app.check_changed_url, 250)
+  }
+}
 
-// necessary test to only launch the extension 1 time per page (at least on safari)
-if (window.top === window) {
-    log("Starting Speedy Video");
-    // turn ON autoplay for netflix
-    if (at_netflix()) { default_autoplay = true; }
-    // check if we are in the sub-page that's supposed to have a video tag -> this avoid the keyshorts messing with the page
-    if (currentURL.indexOf("watch") >= 0 || currentURL.indexOf("Anime") >= 0 ) {
-        // try running setup() 4 times per second until we find the video tag or reach
-        // the maximum number of tries 'max_tries_finding_video'
-        timeout_finding_video = window.setInterval(setup, 250);
+app.check_changed_url = () => {
+  if (window.location.href != app.currentURL) {
+    app.log("old: " + app.currentURL)
+    app.log("new :" + window.location.href)
+    // update new url
+    app.currentURL = window.location.href
+    if (
+      app.currentURL.indexOf("watch") >= 0 ||
+      app.currentURL.indexOf("Anime") >= 0
+    ) {
+      // try finding a new video tag
+      clearInterval(app.timeout_finding_video)
+      app.tries = 0
+      // try running setup() 4 times per second until we find the video tag or reach
+      // the maximum number of tries 'max_tries_finding_video'
+      app.setup()
+      app.timeout_finding_video = setInterval(app.setup, 250)
     } else {
-        log("URL changed, but no \"watch\" in it.");
+      app.log('URL changed, but no "watch" in it.')
     }
-    window.setInterval(check_changed_url, 100);
+  }
 }
 
-
-function check_changed_url() {
-    if(window.location.href != currentURL) {
-        log("old: " + currentURL);
-        log("new :" + window.location.href);
-        // update new url
-        currentURL = window.location.href
-        if (currentURL.indexOf("watch") >= 0 || currentURL.indexOf("Anime") >= 0 ) {
-            // try finding a new video tag
-            clearInterval(timeout_pausing_video);
-            clearInterval(timeout_finding_video);
-            tries = 0;
-            // try running setup() 4 times per second until we find the video tag or reach
-            // the maximum number of tries 'max_tries_finding_video'
-            timeout_finding_video = window.setInterval(setup, 250);
-        } else {
-            log("URL changed, but no \"watch\" in it.");
-        }
-    }
-}
-
-function setup() {
-    tries++;
-    // try to find a valid video tag
-    // this may not work well with pages with multiple videos, but I did not find
-    // this an issue with youtube, etc.
-    my_video = $("video")[0];
-    if(my_video !== undefined) {
-        log("We found a video tag!");
-        //stop trying to find the video tag
-        clearInterval(timeout_finding_video);
-        // try to stop (or not) the autoplay
-        deal_with_autoplay();
-        // add buttons to the video player to show current speed and to speed up or down
-        timeout_finding_status_bar = window.setInterval(add_buttons_player, 250);
-        // set up keyboard shortcuts
-        setup_shorcuts();
-        // add events to toggle keyboard shortcuts on/off when entering an input box
-        $(":text, .textarea, textarea, input, div[role*='textbox']").each(
-            function() { toggle_keyshorts($( this )); }
-        );
+app.setup = () => {
+  app.tries++
+  // try to find a valid video tag
+  // this may not work well with pages with multiple videos, but I did not find
+  // this an issue with youtube, etc.
+  app.my_video = document.querySelectorAll("video")[0]
+  if (app.my_video !== undefined) {
+    app.log("We found a video tag!")
+    //stop trying to find the video tag
+    clearInterval(app.timeout_finding_video)
+    // add buttons to the video player to show current speed and to speed up or down
+    app.add_buttons_player()
+    app.timeout_finding_status_bar = setInterval(app.add_buttons_player, 250)
+    // set up keyboard shortcuts (only once)
+    app.setup_shorcuts(app.active_shortcuts)
+    // periodically check if the playback speed is correct
+    clearInterval(app.interval_maintain_speed)
+    app.interval_maintain_speed = setInterval(app.maintain_speed, 500)
+  } else {
+    if (app.tries >= app.max_tries_finding_video) {
+      app.log(`No video tag found after ${app.tries} tries!`)
+      clearInterval(app.timeout_finding_video)
     } else {
-        if( tries >= max_tries_finding_video ) {
-            log("No video tag found after " + tries + " tries!");
-            clearInterval(timeout_finding_video);
-        } else {
-            log("NO HTML5 video tag yet! Try #" + tries);
-        }
+      app.log(`NO HTML5 video tag yet! Try #${app.tries}`)
     }
+  }
 }
 
-function deal_with_autoplay() {
-    my_video.autoplay = default_autoplay;
-    if ( ! default_autoplay) {
-        // try to stop the video
-        my_video.pause();
-        // set up a recurring function to stop the video from playing.
-        // this expires after 'default_stop_video_timeout' milliseconds or
-        // when the user uses the space key to resume the video.
-        timeout_pausing_video = setInterval( function(){
-            if(my_video !== undefined) {
-                my_video.pause();
-            }
-        }, 100);
-        setTimeout(function(){
-            clearInterval(timeout_pausing_video);
-            clearInterval(timeout_finding_status_bar);
-        }, default_stop_video_timeout);
+app.maintain_speed = () => {
+  app.my_video.playbackRate = app.speed
+  const speed_number_playbar = document.getElementById("speedy_video_speed")
+  if (speed_number_playbar) {
+    speed_number_playbar.innerHTML = app.my_video.playbackRate.toFixed(1)
+  }
+}
+
+app.add_buttons_player = () => {
+  app.log("Trying to add the control buttons on the player status bar")
+  let video_player_buttons = document.getElementById(
+    "speedy_extension_addon_2_player"
+  )
+  if (!video_player_buttons) {
+    const youtube = document.getElementsByClassName(
+      app.config.playerbar_class_name.youtube
+    )[0]
+    if (youtube) {
+      app.log("adding buttons to YOUTUBE")
+      const divButtons = document.createElement("div")
+      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
+      youtube.appendChild(divButtons)
     }
-}
 
-// TODO: show the current speed as an overlay on top of the video, when changing speed
-function add_speed_message_overlay() {
-}
+    const videojs = document.getElementsByClassName(
+      app.config.playerbar_class_name.videojs
+    )[0]
+    if (videojs) {
+      app.log("adding buttons to VIDEOJS")
+      const divButtons = document.createElement("div")
+      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
+      videojs.appendChild(divButtons)
+    }
 
-function add_buttons_player() {
-    log("Trying to add the control buttons on the player status bar");
-    if($("#speedy_extension_addon_2_player")[0] == undefined) {
-        $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(youtube_playerbar_name_class);
-        $("<div id=\"speedy_extension_addon_2_player\"></div>").appendTo(videojs_playerbar_name_class);
-        $("<span id=\"speedy_extension_addon_2_player\"></span>").prependTo(netflix_playerbar_name_class);
-        $("<button id=\"speedy_speed_down\" class=\"speedy_button left_button\">"+slower_text+"</button>").appendTo("#speedy_extension_addon_2_player");
-        $("<b class=\"speedy_tag\"><span id=\"speedy_video_speed\">1.0</span> X</b>").appendTo("#speedy_extension_addon_2_player");
-        $("<button id=\"speedy_speed_up\" class=\"speedy_button\">"+faster_text+"</button>").appendTo("#speedy_extension_addon_2_player");
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
-        $("#speedy_speed_down").click(function() { delta_speed( - default_delta); });
-        $("#speedy_speed_up" ).click(function() { delta_speed( + default_delta); });
+    const netflix = document.getElementsByClassName(
+      app.config.playerbar_class_name.netflix
+    )[0]
+    if (netflix) {
+      app.log("adding buttons to NETFLIX")
+      const spanButtons = document.createElement("span")
+      spanButtons.setAttribute("id", "speedy_extension_addon_2_player")
+      netflix.insertBefore(spanButtons, null)
+    }
+
+    video_player_buttons = document.getElementById(
+      "speedy_extension_addon_2_player"
+    )
+    if (video_player_buttons) {
+      const leftButton = document.createElement("button")
+      leftButton.setAttribute("id", "speedy_speed_down")
+      leftButton.setAttribute("class", "speedy_button left_button")
+      leftButton.innerHTML = app.config.slower_text
+      video_player_buttons.appendChild(leftButton)
+
+      const speedNumber = document.createElement("b")
+      speedNumber.setAttribute("class", "speedy_tag")
+      video_player_buttons.appendChild(speedNumber)
+      const speedNumberSpan = document.createElement("span")
+      speedNumberSpan.setAttribute("id", "speedy_video_speed")
+      speedNumber.appendChild(speedNumberSpan)
+      speedNumber.insertAdjacentText("beforeend", "X")
+
+      const rightButton = document.createElement("button")
+      rightButton.setAttribute("id", "speedy_speed_up")
+      rightButton.setAttribute("class", "speedy_button right_button")
+      rightButton.innerHTML = app.config.faster_text
+      video_player_buttons.appendChild(rightButton)
+
+      document
+        .getElementById("speedy_speed_down")
+        .addEventListener("click", () => {
+          app.speed -= app.config.default_delta
+        })
+      document
+        .getElementById("speedy_speed_up")
+        .addEventListener("click", () => {
+          app.speed += app.config.default_delta
+        })
+
+      app.log("NEW controls were added!")
     } else {
-        clearInterval(timeout_finding_status_bar);
+      app.log("ERROR adding the buttons the playerbar")
     }
+  } else {
+    app.log("Controls were already added!")
+    clearInterval(app.timeout_finding_status_bar)
+  }
 }
 
-function delta_speed(x){
-        my_video.playbackRate+=x;
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
-}
+app.setup_shorcuts = () => {
+  if (app.active_shortcuts) return
+  app.active_shortcuts = true
 
-function absolute_speed(x){
-        my_video.playbackRate=x;
-        $('#speedy_video_speed').html(my_video.playbackRate.toFixed(1));
-}
-
-function setup_shorcuts() {
-    $( "body" ).keydown(function() {
-        if (ignore_keyshorts === false && $(":text:focus").length === 0) {
-            log("Not ignoring keys!"+ event.which);
-            switch (event.which) {
-                case  187 : // +
-                    log_prevent("speed up",event);
-                    delta_speed(default_delta);
-                    break;
-                case 189 : // -
-                    log_prevent("slow down",event);
-                    delta_speed(-default_delta);
-                    break;
-                case 48 : // 0
-                case 49 : // 1
-                    log_prevent("speed 1",event);
-                    absolute_speed(1);
-                    break;
-                case 50 : // 2
-                    log_prevent("speed 2",event);
-                    absolute_speed(2);
-                    break;
-                case 51 : // 3
-                    log_prevent("speed 2.5",event);
-                    absolute_speed(2.5);
-                    break;
-                case 52 : // 4
-                    log_prevent("speed 3",event);
-                    absolute_speed(3);
-                    break;
-                // case 82 : // r
-                //     log_prevent("replay",event);
-                //     if (my_video.ended) { my_video.play(); }
-                //     break;
-                case 32 : // space
-                    log_prevent("space",event);
-                    clearInterval(timeout_pausing_video);
-                    if (my_video.paused) { my_video.play(); }
-                    else {  my_video.pause(); }
-                    break;
-                case 39 : // right arrow
-                    if (at_netflix()) {break;} // this crashes the netflix page
-                    log_prevent("right",event);
-                    my_video.currentTime+=default_skip_small;
-                    break;
-                case 37 : // left arrow
-                    if (at_netflix()) {break;} // this crashes the netflix page
-                    log_prevent("left",event);
-                    my_video.currentTime-=default_skip_small;
-                    break;
-                case 38 : // up arrow
-                    if (at_netflix()) {break;} // this crashes the netflix page
-                    log_prevent("up",event);
-                    my_video.currentTime+=default_skip_big;
-                    break;
-                case 40 : // down arrow
-                    if (at_netflix()) {break;} // this crashes the netflix page
-                    log_prevent("down",event);
-                    my_video.currentTime-=default_skip_big;
-                    break;
-                case 70 : // f
-                    log_prevent("fullscreen",event);
-                    if((window.fullScreen) || (window.innerWidth == screen.width && window.innerHeight == screen.height)) {
-                        // browser is almost certainly fullscreen
-                        log("It's already in fullscreen.");
-                        my_video.webkitExitFullScreen();
-                    } else {
-                        log("Entering fullscreen.");
-                        var full_videojs = $(".vjs-fullscreen-control")[0];
-                        var full_youtube = $(".ytp-fullscreen-button");
-                        if(full_videojs !== undefined) {
-                            eventFire(full_videojs, "click");
-                        } else if (full_youtube !== undefined) {
-                            eventFire(full_youtube, "click");
-                        }
-                    }
-                    break;
-            }
-        } else {
-            log("Ignoring keys!");
-        }
-    });
-}
-
-function eventFire(el, etype){
-    if (el.fireEvent) {
-        (el.fireEvent('on' + etype));
-    } else {
-        var evObj = document.createEvent('Events');
-        evObj.initEvent(etype, true, false);
-        el.dispatchEvent(evObj);
+  document.addEventListener("keydown", () => {
+    app.log(`Not ignoring keys: ${event.which}`)
+    switch (event.which) {
+      case 187: // +
+        if (!event.ctrlKey) return
+        prevent_key_event("speed up", event)
+        app.speed += app.config.default_delta
+        break
+      case 191: // -
+        if (!event.ctrlKey) return
+        prevent_key_event("slow down", event)
+        app.speed -= app.config.default_delta
+        break
+      case 48: // 0
+      case 49: // 1
+        if (!event.ctrlKey) return
+        prevent_key_event("speed 1", event)
+        app.speed = 1.0
+        break
+      case 50: // 2
+        if (!event.ctrlKey) return
+        prevent_key_event("speed 2", event)
+        app.speed = 2.0
+        break
+      case 51: // 3
+        if (!event.ctrlKey) return
+        prevent_key_event("speed 2.5", event)
+        app.speed = 2.5
+        break
+      case 52: // 4
+        if (!event.ctrlKey) return
+        prevent_key_event("speed 3", event)
+        app.speed = 3.0
+        break
+      case 39: // right arrow
+        if (!event.shiftKey) return
+        if (at_netflix()) return // this crashes the netflix page
+        prevent_key_event("right", event)
+        app.my_video.currentTime += app.config.default_skip_small
+        break
+      case 37: // left arrow
+        if (!event.shiftKey) return
+        if (at_netflix()) return // this crashes the netflix page
+        prevent_key_event("left", event)
+        app.my_video.currentTime -= app.config.default_skip_small
+        break
+      case 38: // up arrow
+        if (!event.shiftKey) return
+        if (at_netflix()) return // this crashes the netflix page
+        prevent_key_event("up", event)
+        app.my_video.currentTime += app.config.default_skip_big
+        break
+      case 40: // down arrow
+        if (!event.shiftKey) return
+        if (at_netflix()) return // this crashes the netflix page
+        prevent_key_event("down", event)
+        app.my_video.currentTime -= app.config.default_skip_big
+        break
     }
+  })
 }
 
-function toggle_keyshorts(obj) {
-    obj.focus(function(){
-        log("Input IN");
-        ignore_keyshorts = true;
-    });
-    obj.blur(function(){
-        log("Input OUT");
-        ignore_keyshorts = false;
-    });
+const prevent_key_event = (string, event) => {
+  app.log(string)
+  event.preventDefault()
 }
 
-function log_prevent(string, event) {
-    log(string);
-    event.preventDefault();
+const at_netflix = () => {
+  if (app.currentURL.indexOf("netflix") >= 0) {
+    return true
+  } else {
+    return false
+  }
 }
 
-function log(string) {
-    if (debug) {
-        console.log(string);
-    }
-}
-
-function at_netflix() {
-    if (currentURL.indexOf("netflix") >= 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
+app.start()
