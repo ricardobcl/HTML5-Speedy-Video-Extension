@@ -14,6 +14,10 @@ whitelisted websites.
 
 ![Youtube Player](screenshots/youtube.png)
 
+### Vimeo
+
+![Vimeo Player](screenshots/vimeo.png)
+
 ### VideoJS
 
 ![VideoJS Player](screenshots/videojs.png)

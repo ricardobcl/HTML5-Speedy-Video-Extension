@@ -18,9 +18,16 @@ app.config = {
   faster_text: "&#9758;",
   slower_text: "&#9756;",
   playerbar_class_name: {
+    vimeo: "play-bar rounded-box", // name class of vimeo player bar
     youtube: "ytp-chrome-controls", // name class of youtube player bar
     videojs: "vjs-control-bar", // name class of VideoJS player bar
     netflix: "ellipsize-text" // name class of Netflix player bar
+  },
+  hover_color: {
+    vimeo: "DeepSkyBlue",
+    youtube: "OrangeRed",
+    videojs: "DeepSkyBlue",
+    netflix: "OrangeRed"
   }
 }
 
@@ -48,20 +55,13 @@ app.check_changed_url = () => {
     app.log("new :" + window.location.href)
     // update new url
     app.currentURL = window.location.href
-    if (
-      app.currentURL.indexOf("watch") >= 0 ||
-      app.currentURL.indexOf("Anime") >= 0
-    ) {
-      // try finding a new video tag
-      clearInterval(app.timeout_finding_video)
-      app.tries = 0
-      // try running setup() 4 times per second until we find the video tag or reach
-      // the maximum number of tries 'max_tries_finding_video'
-      app.setup()
-      app.timeout_finding_video = setInterval(app.setup, 250)
-    } else {
-      app.log('URL changed, but no "watch" in it.')
-    }
+    // try finding a new video tag
+    clearInterval(app.timeout_finding_video)
+    app.tries = 0
+    // try running setup() 4 times per second until we find the video tag or reach
+    // the maximum number of tries 'max_tries_finding_video'
+    app.setup()
+    app.timeout_finding_video = setInterval(app.setup, 250)
   }
 }
 
@@ -82,7 +82,7 @@ app.setup = () => {
     app.setup_shorcuts(app.active_shortcuts)
     // periodically check if the playback speed is correct
     clearInterval(app.interval_maintain_speed)
-    app.interval_maintain_speed = setInterval(app.maintain_speed, 500)
+    app.interval_maintain_speed = setInterval(app.maintain_speed, 1000)
   } else {
     if (app.tries >= app.max_tries_finding_video) {
       app.log(`No video tag found after ${app.tries} tries!`)
@@ -107,6 +107,17 @@ app.add_buttons_player = () => {
     "speedy_extension_addon_2_player"
   )
   if (!video_player_buttons) {
+    const vimeo = document.getElementsByClassName(
+      app.config.playerbar_class_name.vimeo
+    )[0]
+    if (vimeo) {
+      app.log("adding buttons to VIMEO")
+      const divButtons = document.createElement("div")
+      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
+      vimeo.appendChild(divButtons)
+      add_css(app.config.hover_color.vimeo)
+    }
+
     const youtube = document.getElementsByClassName(
       app.config.playerbar_class_name.youtube
     )[0]
@@ -115,6 +126,7 @@ app.add_buttons_player = () => {
       const divButtons = document.createElement("div")
       divButtons.setAttribute("id", "speedy_extension_addon_2_player")
       youtube.appendChild(divButtons)
+      add_css(app.config.hover_color.youtube)
     }
 
     const videojs = document.getElementsByClassName(
@@ -125,6 +137,7 @@ app.add_buttons_player = () => {
       const divButtons = document.createElement("div")
       divButtons.setAttribute("id", "speedy_extension_addon_2_player")
       videojs.appendChild(divButtons)
+      add_css(app.config.hover_color.videojs)
     }
 
     const netflix = document.getElementsByClassName(
@@ -135,6 +148,7 @@ app.add_buttons_player = () => {
       const spanButtons = document.createElement("span")
       spanButtons.setAttribute("id", "speedy_extension_addon_2_player")
       netflix.insertBefore(spanButtons, null)
+      add_css(app.config.hover_color.netflix, "0.6em")
     }
 
     video_player_buttons = document.getElementById(
@@ -143,12 +157,11 @@ app.add_buttons_player = () => {
     if (video_player_buttons) {
       const leftButton = document.createElement("button")
       leftButton.setAttribute("id", "speedy_speed_down")
-      leftButton.setAttribute("class", "speedy_button left_button")
       leftButton.innerHTML = app.config.slower_text
       video_player_buttons.appendChild(leftButton)
 
       const speedNumber = document.createElement("b")
-      speedNumber.setAttribute("class", "speedy_tag")
+      speedNumber.setAttribute("id", "speedy_tag")
       video_player_buttons.appendChild(speedNumber)
       const speedNumberSpan = document.createElement("span")
       speedNumberSpan.setAttribute("id", "speedy_video_speed")
@@ -157,7 +170,6 @@ app.add_buttons_player = () => {
 
       const rightButton = document.createElement("button")
       rightButton.setAttribute("id", "speedy_speed_up")
-      rightButton.setAttribute("class", "speedy_button right_button")
       rightButton.innerHTML = app.config.faster_text
       video_player_buttons.appendChild(rightButton)
 
@@ -180,6 +192,15 @@ app.add_buttons_player = () => {
     app.log("Controls were already added!")
     clearInterval(app.timeout_finding_status_bar)
   }
+}
+
+const add_css = (color, size = "1em") => {
+  const css = document.createElement("style")
+  css.type = "text/css"
+  const rule = `#speedy_speed_down:hover, #speedy_speed_up:hover { color: ${color}; }
+                b#speedy_tag { font-size: ${size}; }`
+  css.appendChild(document.createTextNode(rule))
+  document.getElementsByTagName("head")[0].appendChild(css)
 }
 
 app.setup_shorcuts = () => {

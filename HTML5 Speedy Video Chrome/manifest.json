@@ -16,13 +16,10 @@
   "content_scripts": [
     {
       "matches": [
-        "http://kissanime.com/Anime/*",
-        "http://kissanime.to/Anime/*",
-        "https://kissanime.to/Anime/*",
         "http://www.netflix.com/*",
         "https://www.netflix.com/*",
-        "http://www.vimeo.com/*",
-        "https://www.vimeo.com/*",
+        "http://vimeo.com/*",
+        "https://vimeo.com/*",
         "http://www.youtube.com/*",
         "https://www.youtube.com/*"
       ],

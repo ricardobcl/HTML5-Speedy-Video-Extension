@@ -33,15 +33,12 @@
 		</array>
 		<key>Whitelist</key>
 		<array>
-			<string>http://kissanime.com/Anime/*</string>
-			<string>http://kissanime.to/Anime/*</string>
-			<string>https://kissanime.to/Anime/*</string>
 			<string>http://www.youtube.com/*</string>
 			<string>https://www.youtube.com/*</string>
 			<string>http://www.netflix.com/*</string>
 			<string>https://www.netflix.com/*</string>
-			<string>http://www.vimeo.com/*</string>
-			<string>https://www.vimeo.com/*</string>
+			<string>http://vimeo.com/*</string>
+			<string>https://vimeo.com/*</string>
 		</array>
 	</dict>
 	<key>Description</key>
