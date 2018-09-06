@@ -35,7 +35,7 @@ If you want to install manually in your local machine, you can get the extension
 
 ### Releases (easier)
 
-Just download this project's ZIP for [Chrome](https://github.com/ricardobcl/HTML5-Speedy-Video-Extension/releases/download/v2.0/SpeedyChrome.zip) and/or [Safari](https://github.com/ricardobcl/HTML5-Speedy-Video-Extension/releases/download/v2.0/SpeedySafari.zip) and them unpack it.
+Just download this project's ZIP for [Chrome](https://github.com/ricardobcl/HTML5-Speedy-Video-Extension/releases/download/v2.1/SpeedyChrome.zip) and/or [Safari](https://github.com/ricardobcl/HTML5-Speedy-Video-Extension/releases/download/v2.1/SpeedySafari.zip) and them unpack it.
 You should have a new folder for each browser.
 
 ### From Source
