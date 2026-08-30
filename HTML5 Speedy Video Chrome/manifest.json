@@ -18,8 +18,6 @@
       "matches": [
         "http://www.netflix.com/*",
         "https://www.netflix.com/*",
-        "http://vimeo.com/*",
-        "https://vimeo.com/*",
         "http://www.youtube.com/*",
         "https://www.youtube.com/*"
       ],

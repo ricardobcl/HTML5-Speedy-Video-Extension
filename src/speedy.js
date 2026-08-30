@@ -18,13 +18,11 @@ app.config = {
   faster_text: "&#9758;",
   slower_text: "&#9756;",
   playerbar_class_name: {
-    vimeo: "play-bar rounded-box", // name class of vimeo player bar
     youtube: "ytp-chrome-controls", // name class of youtube player bar
     videojs: "vjs-control-bar", // name class of VideoJS player bar
     netflix: "ellipsize-text" // name class of Netflix player bar
   },
   hover_color: {
-    vimeo: "DeepSkyBlue",
     youtube: "OrangeRed",
     videojs: "DeepSkyBlue",
     netflix: "OrangeRed"
@@ -107,17 +105,6 @@ app.add_buttons_player = () => {
     "speedy_extension_addon_2_player"
   )
   if (!video_player_buttons) {
-    const vimeo = document.getElementsByClassName(
-      app.config.playerbar_class_name.vimeo
-    )[0]
-    if (vimeo) {
-      app.log("adding buttons to VIMEO")
-      const divButtons = document.createElement("div")
-      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
-      vimeo.appendChild(divButtons)
-      add_css(app.config.hover_color.vimeo)
-    }
-
     const youtube = document.getElementsByClassName(
       app.config.playerbar_class_name.youtube
     )[0]
