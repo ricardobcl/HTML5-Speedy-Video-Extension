@@ -1,0 +1,52 @@
+#speedy-slower,
+#speedy-faster {
+  font-size: 1em;
+  color: #fff;
+  text-decoration: none;
+
+  background-color: transparent;
+  background-repeat: no-repeat;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
+}
+
+#speedy-slower {
+  padding-left: 5px;
+}
+#speedy-faster {
+  padding-right: 5px;
+}
+
+#speedy-tag {
+  font-size: 1em;
+  color: #fff;
+  text-decoration: none;
+  border: none;
+
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+/* big speed indicator shown on top of the video for a moment */
+#speedy-overlay {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  z-index: 2147483647;
+  pointer-events: none;
+  padding: 0.3em 0.6em;
+  border-radius: 0.2em;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: bold;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+#speedy-overlay.speedy-visible {
+  opacity: 1;
+  transition: none;
+}
