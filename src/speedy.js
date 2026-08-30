@@ -1,268 +1,336 @@
-// 'app' is the main object of this extension
-const app = {
-  speed: 1.0, // initial playback speed
-  my_video: undefined,
-  currentURL: window.location.href,
-  tries: 0,
-  active_shortcuts: false,
-  interval_maintain_speed: undefined
-}
+/**
+ * Speedy Video: fine-grained playback speed control for HTML5 videos.
+ *
+ * A content script with no external dependencies. It finds the page's video
+ * and the player's control bar, adds speed buttons to the bar, installs
+ * keyboard shortcuts and shows the current speed in an overlay near the top
+ * of the video whenever it changes.
+ */
 
-// the config object with default values
-app.config = {
-  default_delta: 0.2, // smallest increment or decrement of playback speed
-  default_skip_small: 2, // number of seconds to (small) skip or rewind the video
-  default_skip_big: 10, // number of seconds to (big) skip or rewind the video
-  debug: false, // flag to disable or enable console log debug info
-  max_tries_finding_video: 150, // max number of tries to finding the video
-  faster_text: "&#9758;",
-  slower_text: "&#9756;",
-  playerbar_class_name: {
-    youtube: "ytp-chrome-controls", // name class of youtube player bar
-    videojs: "vjs-control-bar", // name class of VideoJS player bar
-    netflix: "ellipsize-text" // name class of Netflix player bar
+// -------------------------------------------------------------- configuration
+
+const config = {
+  speedDelta: 0.25, // smallest increment or decrement of playback speed
+  minSpeed: 0.2, // lowest playback speed allowed
+  maxSpeed: 4.0, // highest playback speed allowed
+  speedPresets: { a: 1.0, s: 2.0, d: 3.0 }, // key -> playback speed
+  skipSmall: 2, // seconds seeked by shift + left/right
+  skipBig: 10, // seconds seeked by shift + up/down
+  fasterKey: "w", // key that speeds up by speedDelta
+  slowerKey: "q", // key that slows down by speedDelta
+  overlayKey: "z", // key that shows the current speed on top of the video
+  overlayDuration: 1000, // ms the speed overlay stays visible
+  pollInterval: 250, // ms between attempts to find the video or the player bar
+  maxTriesVideo: 150, // max number of attempts to find the video
+  maxTriesPlayerBar: 150, // max number of attempts to find the player bar
+  debug: false, // enables console.log debug info
+  buttons: {
+    fasterText: "☞",
+    slowerText: "☜",
+    hoverColor: "DeepSkyBlue" // unless the player below overrides it
   },
-  hover_color: {
-    youtube: "OrangeRed",
-    videojs: "DeepSkyBlue",
-    netflix: "OrangeRed"
+  // How to recognise each supported player: the class name of its control bar,
+  // plus optional styling overrides for the buttons we add to it. The first
+  // player found on the page wins. On any other player the buttons are not
+  // added, but the keyboard shortcuts and the speed overlay still work.
+  players: {
+    youtube: { controlBar: "ytp-chrome-controls", hoverColor: "OrangeRed" },
+    netflix: {
+      controlBar: "ellipsize-text",
+      hoverColor: "OrangeRed",
+      tag: "span",
+      fontSize: "0.6em"
+    },
+    videojs: { controlBar: "vjs-control-bar" },
+    plyr: { controlBar: "plyr__controls" },
+    jwplayer: { controlBar: "jw-controlbar" },
+    mediaelement: { controlBar: "mejs__controls" },
+    flowplayer: { controlBar: "fp-controls" },
+    shaka: { controlBar: "shaka-bottom-controls" },
+    bitmovin: { controlBar: "bmpui-ui-controlbar" }
   }
 }
 
-app.log = string => {
-  if (app.config.debug) {
-    console.log(`Speedy Extension: ${string}`)
-  }
+// ------------------------------------------------------------------- helpers
+
+const log = message => {
+  if (config.debug) console.log(`Speedy Extension: ${message}`)
 }
 
-app.start = () => {
-  // necessary test to only launch the extension 1 time per page (at least on safari)
-  if (window.top === window) {
-    app.log("Starting Speedy Video")
-    // try running setup() 4 times per second until we find the video tag or reach
-    // the maximum number of tries 'max_tries_finding_video'
-    app.setup()
-    app.timeout_finding_video = setInterval(app.setup, 250)
-    setInterval(app.check_changed_url, 250)
+const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+
+// "1.25" and "2" instead of "1.2500000000000002" and "2.00"
+const formatSpeed = speed => `${Math.round(speed * 100) / 100}`
+
+// whether keystrokes belong to a text field and should never be hijacked
+const isTyping = target =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable ||
+    ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+
+// seeking by setting currentTime breaks the netflix player, so its own seek
+// shortcuts are left alone
+const atNetflix = () => location.hostname.endsWith("netflix.com")
+
+// the <video> that belongs to a player bar: the first one inside the closest
+// ancestor of the bar that contains a video (pages may have several videos)
+const videoOfPlayerBar = bar => {
+  for (let element = bar.parentElement; element; element = element.parentElement) {
+    const video = element.querySelector("video")
+    if (video) return video
   }
+  return undefined
 }
 
-app.check_changed_url = () => {
-  if (window.location.href != app.currentURL) {
-    app.log("old: " + app.currentURL)
-    app.log("new :" + window.location.href)
-    // update new url
-    app.currentURL = window.location.href
-    // try finding a new video tag
-    clearInterval(app.timeout_finding_video)
-    app.tries = 0
-    // try running setup() 4 times per second until we find the video tag or reach
-    // the maximum number of tries 'max_tries_finding_video'
-    app.setup()
-    app.timeout_finding_video = setInterval(app.setup, 250)
-  }
+// per-player styling of our buttons (added only once)
+const injectStyle = ({ hoverColor = config.buttons.hoverColor, fontSize = "1em" }) => {
+  if (document.getElementById("speedy-style")) return
+  const style = document.createElement("style")
+  style.id = "speedy-style"
+  style.textContent = `
+    #speedy-slower:hover, #speedy-faster:hover { color: ${hoverColor}; }
+    #speedy-tag { font-size: ${fontSize}; }`
+  document.head.append(style)
 }
 
-app.setup = () => {
-  app.tries++
-  // try to find a valid video tag
-  // this may not work well with pages with multiple videos, but I did not find
-  // this an issue with youtube, etc.
-  app.my_video = document.querySelectorAll("video")[0]
-  if (app.my_video !== undefined) {
-    app.log("We found a video tag!")
-    //stop trying to find the video tag
-    clearInterval(app.timeout_finding_video)
-    // add buttons to the video player to show current speed and to speed up or down
-    app.add_buttons_player()
-    app.timeout_finding_status_bar = setInterval(app.add_buttons_player, 250)
-    // set up keyboard shortcuts (only once)
-    app.setup_shorcuts(app.active_shortcuts)
-    // periodically check if the playback speed is correct
-    clearInterval(app.interval_maintain_speed)
-    app.interval_maintain_speed = setInterval(app.maintain_speed, 1000)
-  } else {
-    if (app.tries >= app.max_tries_finding_video) {
-      app.log(`No video tag found after ${app.tries} tries!`)
-      clearInterval(app.timeout_finding_video)
-    } else {
-      app.log(`NO HTML5 video tag yet! Try #${app.tries}`)
+// -------------------------------------------------------------- the extension
+
+class SpeedyVideo {
+  speed = 1.0 // current playback speed
+  video = undefined // the <video> element being controlled
+
+  #currentUrl = location.href
+  #timers = new Map() // active setInterval handles, keyed by name
+  #overlayTimeout = undefined
+  #shortcutsActive = false
+
+  start() {
+    // only run in the top frame, so the extension is launched once per page
+    if (window.top !== window) return
+    log("Starting Speedy Video")
+    this.#watchUrlChanges()
+    this.#findVideo()
+  }
+
+  // sets a new playback speed, clamped to [minSpeed, maxSpeed] and rounded to
+  // two decimals so that repeated +/- steps don't accumulate float error
+  setSpeed(speed) {
+    this.speed = Math.round(clamp(speed, config.minSpeed, config.maxSpeed) * 100) / 100
+    log(`Speed set to ${this.speed}`)
+    this.applySpeed()
+    this.showOverlay()
+  }
+
+  changeSpeed(delta) {
+    this.setSpeed(this.speed + delta)
+  }
+
+  // (re)applies the chosen speed and refreshes the number on the player bar;
+  // also runs every second, because some players reset the rate on their own
+  applySpeed = () => {
+    if (!this.video) return
+    if (this.video.playbackRate !== this.speed) {
+      this.video.playbackRate = this.speed
     }
+    const display = document.getElementById("speedy-speed")
+    if (display) display.textContent = formatSpeed(this.speed)
   }
-}
 
-app.maintain_speed = () => {
-  app.my_video.playbackRate = app.speed
-  const speed_number_playbar = document.getElementById("speedy_video_speed")
-  if (speed_number_playbar) {
-    speed_number_playbar.innerHTML = app.my_video.playbackRate.toFixed(1)
+  seek(seconds) {
+    if (this.video) this.video.currentTime += seconds
   }
-}
 
-app.add_buttons_player = () => {
-  app.log("Trying to add the control buttons on the player status bar")
-  let video_player_buttons = document.getElementById(
-    "speedy_extension_addon_2_player"
-  )
-  if (!video_player_buttons) {
-    const youtube = document.getElementsByClassName(
-      app.config.playerbar_class_name.youtube
-    )[0]
-    if (youtube) {
-      app.log("adding buttons to YOUTUBE")
-      const divButtons = document.createElement("div")
-      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
-      youtube.appendChild(divButtons)
-      add_css(app.config.hover_color.youtube)
-    }
-
-    const videojs = document.getElementsByClassName(
-      app.config.playerbar_class_name.videojs
-    )[0]
-    if (videojs) {
-      app.log("adding buttons to VIDEOJS")
-      const divButtons = document.createElement("div")
-      divButtons.setAttribute("id", "speedy_extension_addon_2_player")
-      videojs.appendChild(divButtons)
-      add_css(app.config.hover_color.videojs)
-    }
-
-    const netflix = document.getElementsByClassName(
-      app.config.playerbar_class_name.netflix
-    )[0]
-    if (netflix) {
-      app.log("adding buttons to NETFLIX")
-      const spanButtons = document.createElement("span")
-      spanButtons.setAttribute("id", "speedy_extension_addon_2_player")
-      netflix.insertBefore(spanButtons, null)
-      add_css(app.config.hover_color.netflix, "0.6em")
-    }
-
-    video_player_buttons = document.getElementById(
-      "speedy_extension_addon_2_player"
+  // shows the current speed in an overlay near the top of the video for a moment
+  showOverlay() {
+    const rect = this.video?.getBoundingClientRect()
+    if (!rect?.width || !rect?.height) return // no video, or not visible
+    const overlay =
+      document.getElementById("speedy-overlay") ?? document.createElement("div")
+    overlay.id = "speedy-overlay"
+    // in fullscreen only descendants of the fullscreen element are visible, so
+    // (re)attach the overlay to it; otherwise to the body
+    const container = document.fullscreenElement ?? document.body
+    if (overlay.parentElement !== container) container.append(overlay)
+    overlay.style.left = `${rect.left + rect.width / 2}px`
+    // near the top of the video, where it covers less of the action
+    overlay.style.top = `${rect.top + rect.height * 0.1}px`
+    overlay.style.fontSize = `${Math.max(12, Math.round(rect.height * 0.025))}px`
+    overlay.textContent = `${formatSpeed(this.speed)}x`
+    overlay.classList.add("speedy-visible")
+    clearTimeout(this.#overlayTimeout)
+    this.#overlayTimeout = setTimeout(
+      () => overlay.classList.remove("speedy-visible"),
+      config.overlayDuration
     )
-    if (video_player_buttons) {
-      const leftButton = document.createElement("button")
-      leftButton.setAttribute("id", "speedy_speed_down")
-      leftButton.innerHTML = app.config.slower_text
-      video_player_buttons.appendChild(leftButton)
+  }
 
-      const speedNumber = document.createElement("b")
-      speedNumber.setAttribute("id", "speedy_tag")
-      video_player_buttons.appendChild(speedNumber)
-      const speedNumberSpan = document.createElement("span")
-      speedNumberSpan.setAttribute("id", "speedy_video_speed")
-      speedNumber.appendChild(speedNumberSpan)
-      speedNumber.insertAdjacentText("beforeend", "X")
+  // ---------------------------------------------------- finding what to drive
 
-      const rightButton = document.createElement("button")
-      rightButton.setAttribute("id", "speedy_speed_up")
-      rightButton.innerHTML = app.config.faster_text
-      video_player_buttons.appendChild(rightButton)
-
-      document
-        .getElementById("speedy_speed_down")
-        .addEventListener("click", () => {
-          app.speed -= app.config.default_delta
-        })
-      document
-        .getElementById("speedy_speed_up")
-        .addEventListener("click", () => {
-          app.speed += app.config.default_delta
-        })
-
-      app.log("NEW controls were added!")
-    } else {
-      app.log("ERROR adding the buttons the playerbar")
+  // single-page sites (e.g. youtube) load a new video without a page load, so
+  // look again for the video whenever the URL changes
+  #watchUrlChanges() {
+    const onChange = () => {
+      if (location.href === this.#currentUrl) return
+      log(`URL changed to ${location.href}`)
+      this.#currentUrl = location.href
+      this.#findVideo()
     }
-  } else {
-    app.log("Controls were already added!")
-    clearInterval(app.timeout_finding_status_bar)
+    if (window.navigation) {
+      window.navigation.addEventListener("currententrychange", onChange)
+    } else {
+      setInterval(onChange, config.pollInterval) // e.g. safari < 18.2
+    }
+  }
+
+  #findVideo() {
+    this.#poll("video", config.maxTriesVideo, () => this.#setup())
+  }
+
+  // returns true when a video was found and everything is set up
+  #setup() {
+    // pages may have several videos: start with the first one and switch later
+    // to the one that belongs to the player bar we find
+    this.video = document.querySelector("video") ?? undefined
+    if (!this.video) return false
+    log("We found a video tag!")
+    this.#poll("playerBar", config.maxTriesPlayerBar, () => this.#addButtons())
+    this.#setupShortcuts()
+    this.#startTimer("applySpeed", this.applySpeed, 1000)
+    return true
+  }
+
+  // returns true when our buttons are on a player bar (already or just added)
+  #addButtons() {
+    if (document.getElementById("speedy-controls")) return true
+    const player = this.#findPlayer()
+    if (!player) return false
+    const { name, bar, options } = player
+    log(`Adding buttons to ${name}`)
+    // control the video of this player, not necessarily the first on the page
+    this.video = videoOfPlayerBar(bar) ?? this.video
+
+    const controls = document.createElement(options.tag ?? "div")
+    controls.id = "speedy-controls"
+    controls.dataset.player = name
+    controls.append(
+      this.#button("speedy-slower", config.buttons.slowerText, -config.speedDelta),
+      this.#speedDisplay(),
+      this.#button("speedy-faster", config.buttons.fasterText, +config.speedDelta)
+    )
+    bar.append(controls)
+    injectStyle(options)
+    return true
+  }
+
+  #findPlayer() {
+    for (const [name, options] of Object.entries(config.players)) {
+      const bar = document.getElementsByClassName(options.controlBar)[0]
+      if (bar) return { name, bar, options }
+    }
+    return undefined
+  }
+
+  #button(id, text, delta) {
+    const button = document.createElement("button")
+    button.id = id
+    button.textContent = text
+    button.addEventListener("click", () => this.changeSpeed(delta))
+    return button
+  }
+
+  #speedDisplay() {
+    const tag = document.createElement("b")
+    tag.id = "speedy-tag"
+    const speed = document.createElement("span")
+    speed.id = "speedy-speed"
+    speed.textContent = formatSpeed(this.speed)
+    tag.append(speed, "x")
+    return tag
+  }
+
+  // ---------------------------------------------------------------- shortcuts
+
+  #setupShortcuts() {
+    if (this.#shortcutsActive) return
+    this.#shortcutsActive = true
+    // capture phase, so that we run before the site's own handlers
+    document.addEventListener("keydown", this.#onKeydown, true)
+  }
+
+  #onKeydown = event => {
+    if (isTyping(event.target) || event.altKey || event.metaKey) return
+    const action = this.#actionFor(event)
+    if (!action) return
+    log(`Shortcut: ${event.key}`)
+    // also stop the site's own handler for the same key (e.g. youtube seeks
+    // 5s on the arrows), otherwise both actions would run
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    action()
+  }
+
+  // Speed shortcuts are plain single letters (safe because keystrokes in
+  // text fields are ignored); seek shortcuts are prefixed with shift.
+  #actionFor({ key, ctrlKey, shiftKey }) {
+    if (shiftKey) return atNetflix() ? undefined : this.#seekActionFor(key)
+    if (ctrlKey) return undefined // never steal combos like control+a
+    return this.#speedActionFor(key.toLowerCase())
+  }
+
+  #speedActionFor(key) {
+    if (key === config.fasterKey) return () => this.changeSpeed(+config.speedDelta)
+    if (key === config.slowerKey) return () => this.changeSpeed(-config.speedDelta)
+    if (key === config.overlayKey) return () => this.showOverlay()
+    const preset = config.speedPresets[key]
+    return preset === undefined ? undefined : () => this.setSpeed(preset)
+  }
+
+  #seekActionFor(key) {
+    const seconds = {
+      ArrowRight: config.skipSmall,
+      ArrowLeft: -config.skipSmall,
+      ArrowUp: config.skipBig,
+      ArrowDown: -config.skipBig
+    }[key]
+    return seconds === undefined ? undefined : () => this.seek(seconds)
+  }
+
+  // ------------------------------------------------------------------- timers
+
+  // calls `fn` now and then every `pollInterval` ms until it returns true or
+  // `maxTries` is reached; restarting a poll cancels the previous one first,
+  // so polls never leak
+  #poll(name, maxTries, fn) {
+    this.#stopTimer(name)
+    let tries = 0
+    const tick = () => {
+      tries += 1
+      if (fn()) {
+        this.#stopTimer(name)
+        return true
+      }
+      if (tries >= maxTries) {
+        log(`${name}: giving up after ${tries} tries`)
+        this.#stopTimer(name)
+        return true
+      }
+      log(`${name}: try #${tries}`)
+      return false
+    }
+    if (!tick()) {
+      this.#timers.set(name, setInterval(tick, config.pollInterval))
+    }
+  }
+
+  #startTimer(name, fn, ms) {
+    this.#stopTimer(name)
+    this.#timers.set(name, setInterval(fn, ms))
+  }
+
+  #stopTimer(name) {
+    clearInterval(this.#timers.get(name))
+    this.#timers.delete(name)
   }
 }
 
-const add_css = (color, size = "1em") => {
-  const css = document.createElement("style")
-  css.type = "text/css"
-  const rule = `#speedy_speed_down:hover, #speedy_speed_up:hover { color: ${color}; }
-                b#speedy_tag { font-size: ${size}; }`
-  css.appendChild(document.createTextNode(rule))
-  document.getElementsByTagName("head")[0].appendChild(css)
-}
-
-app.setup_shorcuts = () => {
-  if (app.active_shortcuts) return
-  app.active_shortcuts = true
-
-  document.addEventListener("keydown", () => {
-    app.log(`Not ignoring keys: ${event.which}`)
-    switch (event.which) {
-      case 187: // +
-        if (!event.ctrlKey) return
-        prevent_key_event("speed up", event)
-        app.speed += app.config.default_delta
-        break
-      case 191: // -
-        if (!event.ctrlKey) return
-        prevent_key_event("slow down", event)
-        app.speed -= app.config.default_delta
-        break
-      case 48: // 0
-      case 49: // 1
-        if (!event.ctrlKey) return
-        prevent_key_event("speed 1", event)
-        app.speed = 1.0
-        break
-      case 50: // 2
-        if (!event.ctrlKey) return
-        prevent_key_event("speed 2", event)
-        app.speed = 2.0
-        break
-      case 51: // 3
-        if (!event.ctrlKey) return
-        prevent_key_event("speed 2.5", event)
-        app.speed = 2.5
-        break
-      case 52: // 4
-        if (!event.ctrlKey) return
-        prevent_key_event("speed 3", event)
-        app.speed = 3.0
-        break
-      case 39: // right arrow
-        if (!event.shiftKey) return
-        if (at_netflix()) return // this crashes the netflix page
-        prevent_key_event("right", event)
-        app.my_video.currentTime += app.config.default_skip_small
-        break
-      case 37: // left arrow
-        if (!event.shiftKey) return
-        if (at_netflix()) return // this crashes the netflix page
-        prevent_key_event("left", event)
-        app.my_video.currentTime -= app.config.default_skip_small
-        break
-      case 38: // up arrow
-        if (!event.shiftKey) return
-        if (at_netflix()) return // this crashes the netflix page
-        prevent_key_event("up", event)
-        app.my_video.currentTime += app.config.default_skip_big
-        break
-      case 40: // down arrow
-        if (!event.shiftKey) return
-        if (at_netflix()) return // this crashes the netflix page
-        prevent_key_event("down", event)
-        app.my_video.currentTime -= app.config.default_skip_big
-        break
-    }
-  })
-}
-
-const prevent_key_event = (string, event) => {
-  app.log(string)
-  event.preventDefault()
-}
-
-const at_netflix = () => {
-  return app.currentURL.indexOf("netflix") >= 0
-}
-
-app.start()
+new SpeedyVideo().start()
