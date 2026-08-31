@@ -1,10 +1,11 @@
 /**
  * Speedy Video: fine-grained playback speed control for HTML5 videos.
  *
- * A content script with no external dependencies. It finds the page's video,
- * installs keyboard shortcuts and shows the current speed in an overlay near
- * the top of the video whenever it changes. The overlay is the only thing it
- * adds to the page.
+ * A content script with no external dependencies. It keeps the playback speed
+ * you chose applied to whatever video is playing on the page, installs
+ * keyboard shortcuts and shows the current speed in an overlay near the top
+ * of the video whenever it changes. The overlay is the only thing it adds to
+ * the page.
  */
 
 // -------------------------------------------------------------- configuration
@@ -20,8 +21,9 @@ const config = {
   slowerKey: "q", // key that slows down by speedDelta
   overlayKey: "z", // key that shows the current speed on top of the video
   overlayDuration: 1000, // ms the speed overlay stays visible
-  pollInterval: 250, // ms between attempts to find the video
-  maxTriesVideo: 150, // max number of attempts to find the video
+  applyInterval: 1000, // ms between checks that the playing video has the chosen speed
+  pollInterval: 250, // ms between attempts to find a video after a page change
+  maxTriesVideo: 150, // max number of attempts to find a video
   debug: false // enables console.log debug info
 }
 
@@ -45,6 +47,21 @@ const isTyping = target =>
 // seeking by setting currentTime breaks the netflix player, so its own seek
 // shortcuts are left alone
 const atNetflix = () => location.hostname.endsWith("netflix.com")
+
+const area = element => {
+  const rect = element.getBoundingClientRect()
+  return rect.width * rect.height
+}
+
+// The video to control: the largest one playing, else the largest visible
+// one, else the first. Sites keep hidden or paused players around (youtube
+// keeps its regular player on shorts pages) and feeds and stories show
+// several videos in turn, so this is decided again every time it matters.
+const findVideo = () => {
+  const videos = [...document.querySelectorAll("video")]
+  const visible = videos.filter(video => area(video) > 0).sort((a, b) => area(b) - area(a))
+  return visible.find(video => !video.paused) ?? visible[0] ?? videos[0]
+}
 
 // -------------------------------------------------------------- the extension
 
@@ -78,21 +95,24 @@ class SpeedyVideo {
     this.setSpeed(this.speed + delta)
   }
 
-  // (re)applies the chosen speed; also runs every second, because some
-  // players reset the rate on their own
+  // (re)applies the chosen speed to the video playing now; also runs every
+  // second, because the playing video changes without a page change in feeds
+  // and stories, and some players reset the rate on their own
   applySpeed = () => {
-    if (!this.video) return
-    if (this.video.playbackRate !== this.speed) {
+    this.video = findVideo()
+    if (this.video && this.video.playbackRate !== this.speed) {
       this.video.playbackRate = this.speed
     }
   }
 
   seek(seconds) {
+    this.video = findVideo()
     if (this.video) this.video.currentTime += seconds
   }
 
   // shows the current speed in an overlay near the top of the video for a moment
   showOverlay() {
+    this.video = findVideo()
     const rect = this.video?.getBoundingClientRect()
     if (!rect?.width || !rect?.height) return // no video, or not visible
     const overlay =
@@ -139,11 +159,11 @@ class SpeedyVideo {
 
   // returns true when a video was found and everything is set up
   #setup() {
-    this.video = document.querySelector("video") ?? undefined
-    if (!this.video) return false
+    if (!findVideo()) return false
     log("We found a video tag!")
     this.#setupShortcuts()
-    this.#startTimer("applySpeed", this.applySpeed, 1000)
+    this.#startTimer("applySpeed", this.applySpeed, config.applyInterval)
+    this.applySpeed() // right away, so a new video does not start at 1x
     return true
   }
 
