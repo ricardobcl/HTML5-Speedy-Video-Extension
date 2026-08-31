@@ -12,8 +12,8 @@ Manifest V3 · Chrome &amp; Safari · one-command install</p>
 </p>
 
 A tiny browser extension for fine-grained control over the playback speed of
-HTML5 videos on Youtube (Shorts included), Netflix, Instagram, X and other
-whitelisted websites: keyboard shortcuts, plus an overlay that shows the speed
+HTML5 videos on Youtube (Shorts included), Netflix, Instagram, X, Patreon and
+other whitelisted websites: keyboard shortcuts, plus an overlay that shows the speed
 whenever it changes — and that overlay is the only thing it adds to the page.
 
 It is a small [Manifest V3](https://developer.chrome.com/docs/extensions/develop/migrate)
@@ -30,7 +30,7 @@ and the old extension format is gone from Safari. 4.0 is a rebuild:
 - 🧭 **Safari support** — as a signed Safari Web Extension (`make safari`)
 - ⌨️ **New shortcuts** — `w`/`q` for ±0.25x, `a`/`s`/`d` for 1x/2x/3x, `z` shows the speed
 - 👀 **Speed overlay** — on the video whenever the speed changes, also in fullscreen
-- 🌐 **More websites** — Youtube Shorts, Instagram (feed, reels and stories) and X
+- 🌐 **More websites** — Youtube Shorts, Instagram (feed, reels and stories), X, Patreon and Youtube embeds anywhere
 - 🎯 **Follows the playing video** — feeds, reels, stories and Shorts just work
 - 🧹 **Nothing else on the page** — the old ☜ 1x ☞ buttons on the player bar are gone
 - 🐛 **Fixes** — no more runaway polling, leaked timers or speeds Chrome refuses
@@ -113,17 +113,20 @@ can download it too). Then:
 
 By default the extension runs on:
 
-| Website  | Notes                                                        |
-| -------- | ------------------------------------------------------------ |
-| Youtube  | regular videos and Shorts; covered by automated checks       |
-| Netflix  | the seek shortcuts are left to Netflix's own                 |
-| Instagram| feed, reels and stories                                      |
-| X        | `x.com` and `twitter.com`                                    |
+| Website        | Notes                                                              |
+| -------------- | ------------------------------------------------------------------ |
+| Youtube        | regular videos and Shorts; covered by automated checks             |
+| Netflix        | the seek shortcuts are left to Netflix's own                       |
+| Instagram      | feed, reels and stories                                            |
+| X              | `x.com` and `twitter.com`                                          |
+| Patreon        | Patreon's own player and embedded Youtube videos                   |
+| Youtube embeds | on any website (`youtube.com` and `youtube-nocookie.com` embeds): click the embedded player first, so it has focus |
 
-It works on any HTML5 `<video>`: it controls the video that is playing (the
-largest one, if several are), so it follows you through feeds, reels, stories
-and Shorts, and keeps the speed you chose across videos until you change it.
-To run it on another website, add it to the whitelist (see
+It works on any HTML5 `<video>`, also inside shadow DOM: it controls the video
+that is playing (the largest one, if several are), so it follows you through
+feeds, reels, stories and Shorts, and keeps the speed you chose across videos
+until you change it. It also runs inside frames, which is how embedded Youtube
+players work. To run it on another website, add it to the whitelist (see
 [Website Whitelist](#-website-whitelist)).
 
 ## ⌨️ Keyboard Shortcuts
@@ -185,7 +188,7 @@ const config = {
 ## 🌐 Website Whitelist
 
 The extension only runs on explicitly allowed websites. By default it comes
-with Youtube, Netflix, Instagram and X, but you can change which
+with Youtube, Netflix, Instagram, X and Patreon, but you can change which
 pages this extension runs by changing `content_scripts` -> `matches` in
 `chrome/manifest.json` (see
 [google's content script docs](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)
