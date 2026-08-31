@@ -53,12 +53,22 @@ const area = element => {
   return rect.width * rect.height
 }
 
+// all <video> elements, including those inside (open) shadow roots, where
+// some players keep them (e.g. web-component players such as mux-player)
+const allVideos = (root = document) => {
+  const videos = [...root.querySelectorAll("video")]
+  for (const element of root.querySelectorAll("*")) {
+    if (element.shadowRoot) videos.push(...allVideos(element.shadowRoot))
+  }
+  return videos
+}
+
 // The video to control: the largest one playing, else the largest visible
 // one, else the first. Sites keep hidden or paused players around (youtube
 // keeps its regular player on shorts pages) and feeds and stories show
 // several videos in turn, so this is decided again every time it matters.
 const findVideo = () => {
-  const videos = [...document.querySelectorAll("video")]
+  const videos = allVideos()
   const visible = videos.filter(video => area(video) > 0).sort((a, b) => area(b) - area(a))
   return visible.find(video => !video.paused) ?? visible[0] ?? videos[0]
 }
