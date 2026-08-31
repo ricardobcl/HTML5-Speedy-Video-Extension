@@ -64,14 +64,14 @@ const allVideos = (root = document) => {
   return videos
 }
 
-// The video to control: the largest one playing, else the largest visible
-// one, else the first. Sites keep hidden or paused players around (youtube
-// keeps its regular player on shorts pages) and feeds and stories show
-// several videos in turn, so this is decided again every time it matters.
+// The video to control: the largest one playing, else the largest one on
+// screen; hidden videos don't count. Sites keep hidden or paused players
+// around (youtube keeps its regular player on shorts pages) and feeds and
+// stories show several videos in turn, so this is decided again every time it
+// matters.
 const findVideo = () => {
-  const videos = allVideos()
-  const visible = videos.filter(video => area(video) > 0).sort((a, b) => area(b) - area(a))
-  return visible.find(video => !video.paused) ?? visible[0] ?? videos[0]
+  const visible = allVideos().filter(video => area(video) > 0).sort((a, b) => area(b) - area(a))
+  return visible.find(video => !video.paused) ?? visible[0]
 }
 
 // -------------------------------------------------------------- the extension
@@ -189,6 +189,9 @@ class SpeedyVideo {
     if (isTyping(event.target) || event.altKey || event.metaKey) return
     const action = this.#actionFor(event)
     if (!action) return
+    // with no video on screen (e.g. a chat with the video viewer closed) the
+    // keys are left to the site, so that typing keeps working
+    if (!findVideo()) return
     log(`Shortcut: ${event.key}`)
     // also stop the site's own handler for the same key (e.g. youtube seeks
     // 5s on the arrows), otherwise both actions would run
