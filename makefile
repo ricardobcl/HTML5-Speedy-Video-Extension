@@ -1,4 +1,5 @@
 CHROME = chrome
+ZIP = SpeedyChrome.zip
 SAFARI = safari
 APP = HTML5 Speedy Video
 BUNDLE_ID = com.ricardobcl.html5speedyvideo
@@ -92,9 +93,11 @@ clean_chrome:
 	@ rm -rf "$(CHROME)/icons"
 	@ rm -f "$(CHROME)/speedy.js" "$(CHROME)/style.css" "$(CHROME)/.DS_Store"
 
+# zip for the Chrome Web Store, which wants the manifest at the root of the
+# archive, not inside a folder
 release: clean_release chrome
-	@ zip -r SpeedyChrome.zip "$(CHROME)"
-	@ echo "$(GREEN)Release zip is ready!$(PLAIN)"
+	@ cd "$(CHROME)" && zip -rq "../$(ZIP)" . -x ".*" "*/.*"
+	@ echo "$(GREEN)Release zip is ready: $(ZIP)$(PLAIN)"
 
 clean_release:
-	@ rm -f SpeedyChrome.zip
+	@ rm -f "$(ZIP)"
