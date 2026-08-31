@@ -1,10 +1,10 @@
 /**
  * Speedy Video: fine-grained playback speed control for HTML5 videos.
  *
- * A content script with no external dependencies. It finds the page's video
- * and the player's control bar, adds speed buttons to the bar, installs
- * keyboard shortcuts and shows the current speed in an overlay near the top
- * of the video whenever it changes.
+ * A content script with no external dependencies. It finds the page's video,
+ * installs keyboard shortcuts and shows the current speed in an overlay near
+ * the top of the video whenever it changes. The overlay is the only thing it
+ * adds to the page.
  */
 
 // -------------------------------------------------------------- configuration
@@ -20,35 +20,9 @@ const config = {
   slowerKey: "q", // key that slows down by speedDelta
   overlayKey: "z", // key that shows the current speed on top of the video
   overlayDuration: 1000, // ms the speed overlay stays visible
-  pollInterval: 250, // ms between attempts to find the video or the player bar
+  pollInterval: 250, // ms between attempts to find the video
   maxTriesVideo: 150, // max number of attempts to find the video
-  maxTriesPlayerBar: 150, // max number of attempts to find the player bar
-  debug: false, // enables console.log debug info
-  buttons: {
-    fasterText: "☞",
-    slowerText: "☜",
-    hoverColor: "DeepSkyBlue" // unless the player below overrides it
-  },
-  // How to recognise each supported player: the class name of its control bar,
-  // plus optional styling overrides for the buttons we add to it. The first
-  // player found on the page wins. On any other player the buttons are not
-  // added, but the keyboard shortcuts and the speed overlay still work.
-  players: {
-    youtube: { controlBar: "ytp-chrome-controls", hoverColor: "OrangeRed" },
-    netflix: {
-      controlBar: "ellipsize-text",
-      hoverColor: "OrangeRed",
-      tag: "span",
-      fontSize: "0.6em"
-    },
-    videojs: { controlBar: "vjs-control-bar" },
-    plyr: { controlBar: "plyr__controls" },
-    jwplayer: { controlBar: "jw-controlbar" },
-    mediaelement: { controlBar: "mejs__controls" },
-    flowplayer: { controlBar: "fp-controls" },
-    shaka: { controlBar: "shaka-bottom-controls" },
-    bitmovin: { controlBar: "bmpui-ui-controlbar" }
-  }
+  debug: false // enables console.log debug info
 }
 
 // ------------------------------------------------------------------- helpers
@@ -71,27 +45,6 @@ const isTyping = target =>
 // seeking by setting currentTime breaks the netflix player, so its own seek
 // shortcuts are left alone
 const atNetflix = () => location.hostname.endsWith("netflix.com")
-
-// the <video> that belongs to a player bar: the first one inside the closest
-// ancestor of the bar that contains a video (pages may have several videos)
-const videoOfPlayerBar = bar => {
-  for (let element = bar.parentElement; element; element = element.parentElement) {
-    const video = element.querySelector("video")
-    if (video) return video
-  }
-  return undefined
-}
-
-// per-player styling of our buttons (added only once)
-const injectStyle = ({ hoverColor = config.buttons.hoverColor, fontSize = "1em" }) => {
-  if (document.getElementById("speedy-style")) return
-  const style = document.createElement("style")
-  style.id = "speedy-style"
-  style.textContent = `
-    #speedy-slower:hover, #speedy-faster:hover { color: ${hoverColor}; }
-    #speedy-tag { font-size: ${fontSize}; }`
-  document.head.append(style)
-}
 
 // -------------------------------------------------------------- the extension
 
@@ -125,15 +78,13 @@ class SpeedyVideo {
     this.setSpeed(this.speed + delta)
   }
 
-  // (re)applies the chosen speed and refreshes the number on the player bar;
-  // also runs every second, because some players reset the rate on their own
+  // (re)applies the chosen speed; also runs every second, because some
+  // players reset the rate on their own
   applySpeed = () => {
     if (!this.video) return
     if (this.video.playbackRate !== this.speed) {
       this.video.playbackRate = this.speed
     }
-    const display = document.getElementById("speedy-speed")
-    if (display) display.textContent = formatSpeed(this.speed)
   }
 
   seek(seconds) {
@@ -188,64 +139,12 @@ class SpeedyVideo {
 
   // returns true when a video was found and everything is set up
   #setup() {
-    // pages may have several videos: start with the first one and switch later
-    // to the one that belongs to the player bar we find
     this.video = document.querySelector("video") ?? undefined
     if (!this.video) return false
     log("We found a video tag!")
-    this.#poll("playerBar", config.maxTriesPlayerBar, () => this.#addButtons())
     this.#setupShortcuts()
     this.#startTimer("applySpeed", this.applySpeed, 1000)
     return true
-  }
-
-  // returns true when our buttons are on a player bar (already or just added)
-  #addButtons() {
-    if (document.getElementById("speedy-controls")) return true
-    const player = this.#findPlayer()
-    if (!player) return false
-    const { name, bar, options } = player
-    log(`Adding buttons to ${name}`)
-    // control the video of this player, not necessarily the first on the page
-    this.video = videoOfPlayerBar(bar) ?? this.video
-
-    const controls = document.createElement(options.tag ?? "div")
-    controls.id = "speedy-controls"
-    controls.dataset.player = name
-    controls.append(
-      this.#button("speedy-slower", config.buttons.slowerText, -config.speedDelta),
-      this.#speedDisplay(),
-      this.#button("speedy-faster", config.buttons.fasterText, +config.speedDelta)
-    )
-    bar.append(controls)
-    injectStyle(options)
-    return true
-  }
-
-  #findPlayer() {
-    for (const [name, options] of Object.entries(config.players)) {
-      const bar = document.getElementsByClassName(options.controlBar)[0]
-      if (bar) return { name, bar, options }
-    }
-    return undefined
-  }
-
-  #button(id, text, delta) {
-    const button = document.createElement("button")
-    button.id = id
-    button.textContent = text
-    button.addEventListener("click", () => this.changeSpeed(delta))
-    return button
-  }
-
-  #speedDisplay() {
-    const tag = document.createElement("b")
-    tag.id = "speedy-tag"
-    const speed = document.createElement("span")
-    speed.id = "speedy-speed"
-    speed.textContent = formatSpeed(this.speed)
-    tag.append(speed, "x")
-    return tag
   }
 
   // ---------------------------------------------------------------- shortcuts
