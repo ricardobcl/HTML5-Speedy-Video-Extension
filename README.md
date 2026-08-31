@@ -12,16 +12,16 @@ Manifest V3 · Chrome &amp; Safari · one-command install</p>
 </p>
 
 A tiny browser extension for fine-grained control over the playback speed of
-HTML5 videos on Youtube, Netflix and other whitelisted websites: speed buttons
-on the player bar, keyboard shortcuts, and an overlay showing the speed
-whenever it changes.
+HTML5 videos on Youtube (Shorts included), Netflix, Instagram, X and other
+whitelisted websites: keyboard shortcuts, plus an overlay that shows the speed
+whenever it changes — and that overlay is the only thing it adds to the page.
 
 It is a small [Manifest V3](https://developer.chrome.com/docs/extensions/develop/migrate)
 content-script extension: no background page, no network access and no
 permissions beyond the whitelisted websites. Local installation only, for now.
 Last tested on Youtube with Chrome 152 and Safari 26.6.
 
-## 🆕 What's new in 4.0 (2026)
+## 🆕 What's new in 4.x (2026)
 
 The 2018 version stopped loading years ago: Manifest V2 is gone from Chrome
 and the old extension format is gone from Safari. 4.0 is a rebuild:
@@ -30,21 +30,19 @@ and the old extension format is gone from Safari. 4.0 is a rebuild:
 - 🧭 **Safari support** — as a signed Safari Web Extension (`make safari`)
 - ⌨️ **New shortcuts** — `w`/`q` for ±0.25x, `a`/`s`/`d` for 1x/2x/3x, `z` shows the speed
 - 👀 **Speed overlay** — on the video whenever the speed changes, also in fullscreen
-- 🎛️ **More players** — Video.js, Plyr, MediaElement.js, Flowplayer, Shaka, JW Player, Bitmovin
+- 🌐 **More websites** — Youtube Shorts, Instagram (feed, reels and stories) and X
+- 🎯 **Follows the playing video** — feeds, reels, stories and Shorts just work
+- 🧹 **Nothing else on the page** — the old ☜ 1x ☞ buttons on the player bar are gone
 - 🐛 **Fixes** — no more runaway polling, leaked timers or speeds Chrome refuses
 - 🚀 **One-command install** — `make install` for Chrome, `make safari` for Safari
 
 ### Youtube
 
-![Youtube Player](screenshots/youtube.png)
+![Youtube](screenshots/youtube.png)
 
-### Netflix
+### Youtube Shorts
 
-![Netflix Player](screenshots/netflix.png)
-
-### VideoJS (and other players)
-
-![VideoJS Player](screenshots/videojs.png)
+![Youtube Shorts](screenshots/shorts.png)
 
 ## 🚀 Install in Chrome
 
@@ -111,31 +109,22 @@ can download it too). Then:
 - Publishing the extension (App Store or notarized) would additionally
   require the paid Apple Developer Program.
 
-## 🎛️ Supported players
+## 🌐 Supported websites
 
-On these players the extension adds its speed buttons to the player's control
-bar:
+By default the extension runs on:
 
-| Player          | Control bar class       | Status                                 |
-| --------------- | ----------------------- | -------------------------------------- |
-| Youtube         | `ytp-chrome-controls`   | tested                                 |
-| Netflix         | `ellipsize-text`        | untested since 2018 (needs an account) |
-| Video.js        | `vjs-control-bar`       | tested (Video.js 8)                    |
-| Plyr            | `plyr__controls`        | tested (plyr.io)                       |
-| JW Player       | `jw-controlbar`         | untested                               |
-| MediaElement.js | `mejs__controls`        | tested (mediaelementjs.com)            |
-| Flowplayer      | `fp-controls`           | tested (flowplayer.com)                |
-| Shaka Player UI | `shaka-bottom-controls` | tested (shaka demo)                    |
-| Bitmovin        | `bmpui-ui-controlbar`   | untested                               |
+| Website  | Notes                                                        |
+| -------- | ------------------------------------------------------------ |
+| Youtube  | regular videos and Shorts; covered by automated checks       |
+| Netflix  | the seek shortcuts are left to Netflix's own                 |
+| Instagram| feed, reels and stories                                      |
+| X        | `x.com` and `twitter.com`                                    |
 
-On any other page with an HTML5 `<video>` the buttons are not added, but the
-keyboard shortcuts and the speed overlay still work. When a page has several
-videos, the extension controls the one that belongs to the player bar it
-found.
-
-**NOTE**: the extension only runs on the whitelisted websites (Youtube and
-Netflix by default). To use it on another site, add that site to the
-whitelist (see [Website Whitelist](#-website-whitelist)).
+It works on any HTML5 `<video>`: it controls the video that is playing (the
+largest one, if several are), so it follows you through feeds, reels, stories
+and Shorts, and keeps the speed you chose across videos until you change it.
+To run it on another website, add it to the whitelist (see
+[Website Whitelist](#-website-whitelist)).
 
 ## ⌨️ Keyboard Shortcuts
 
@@ -152,8 +141,8 @@ whitelist (see [Website Whitelist](#-website-whitelist)).
 | shift + :arrow_down:  | \*\* Rewind 10 seconds              |
 | shift + :arrow_up:    | \*\* Skip 10 seconds                |
 
-Whenever the speed changes (buttons or shortcuts) the new speed is shown for a
-second in an overlay near the top of the video, also in fullscreen. Press `z`
+Whenever the speed changes the new speed is shown for a second in an overlay
+near the top of the video, also in fullscreen. Press `z`
 to show it at any time.
 
 Notes:
@@ -186,45 +175,17 @@ const config = {
   slowerKey: "q", // key that slows down by speedDelta
   overlayKey: "z", // key that shows the current speed on top of the video
   overlayDuration: 1000, // ms the speed overlay stays visible
-  pollInterval: 250, // ms between attempts to find the video or the player bar
-  maxTriesVideo: 150, // max number of attempts to find the video
-  maxTriesPlayerBar: 150, // max number of attempts to find the player bar
-  debug: false, // enables console.log debug info
-  buttons: {
-    fasterText: "☞",
-    slowerText: "☜",
-    hoverColor: "DeepSkyBlue" // unless the player below overrides it
-  },
-  // How to recognise each supported player: the class name of its control bar,
-  // plus optional styling overrides for the buttons we add to it. The first
-  // player found on the page wins. On any other player the buttons are not
-  // added, but the keyboard shortcuts and the speed overlay still work.
-  players: {
-    youtube: { controlBar: "ytp-chrome-controls", hoverColor: "OrangeRed" },
-    netflix: {
-      controlBar: "ellipsize-text",
-      hoverColor: "OrangeRed",
-      tag: "span",
-      fontSize: "0.6em"
-    },
-    videojs: { controlBar: "vjs-control-bar" },
-    plyr: { controlBar: "plyr__controls" },
-    jwplayer: { controlBar: "jw-controlbar" },
-    mediaelement: { controlBar: "mejs__controls" },
-    flowplayer: { controlBar: "fp-controls" },
-    shaka: { controlBar: "shaka-bottom-controls" },
-    bitmovin: { controlBar: "bmpui-ui-controlbar" }
-  }
+  applyInterval: 1000, // ms between checks that the playing video has the chosen speed
+  pollInterval: 250, // ms between attempts to find a video after a page change
+  maxTriesVideo: 150, // max number of attempts to find a video
+  debug: false // enables console.log debug info
 }
 ```
-
-To support another player, add an entry to `players` with the class name of
-its control bar.
 
 ## 🌐 Website Whitelist
 
 The extension only runs on explicitly allowed websites. By default it comes
-with some allowed websites (e.g., Youtube, Netflix), but you can change which
+with Youtube, Netflix, Instagram and X, but you can change which
 pages this extension runs by changing `content_scripts` -> `matches` in
 `chrome/manifest.json` (see
 [google's content script docs](https://developer.chrome.com/docs/extensions/develop/concepts/content-scripts)
