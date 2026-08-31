@@ -6,7 +6,9 @@
  * keyboard shortcuts and shows the current speed in an overlay near the top
  * of the video whenever it changes. The overlay is the only thing it adds to
  * the page. It runs in every frame, so embedded players (e.g. a Youtube video
- * on another site) work too, once they have the keyboard focus.
+ * on another site) work too, once they have the keyboard focus. Videos that
+ * appear later, without a page change (e.g. the viewer on Whatsapp), are
+ * picked up when they start playing.
  */
 
 // -------------------------------------------------------------- configuration
@@ -88,6 +90,7 @@ class SpeedyVideo {
   start() {
     log("Starting Speedy Video")
     this.#watchUrlChanges()
+    this.#watchPlayback()
     this.#findVideo()
   }
 
@@ -166,10 +169,20 @@ class SpeedyVideo {
     this.#poll("video", config.maxTriesVideo, () => this.#setup())
   }
 
-  // returns true when a video was found and everything is set up
+  // some sites have no video until one is opened, long after the page loaded
+  // and without a URL change (e.g. whatsapp, where videos play in a viewer),
+  // so a video starting to play is the other cue to set up; `play` does not
+  // bubble, but the capture phase still sees it here
+  #watchPlayback() {
+    document.addEventListener("play", () => this.#setup(), true)
+  }
+
+  // returns true when a video was found and everything is set up; running it
+  // again (e.g. when another video starts playing) is harmless
   #setup() {
     if (!findVideo()) return false
     log("We found a video tag!")
+    this.#stopTimer("video")
     this.#setupShortcuts()
     this.#startTimer("applySpeed", this.applySpeed, config.applyInterval)
     this.applySpeed() // right away, so a new video does not start at 1x
