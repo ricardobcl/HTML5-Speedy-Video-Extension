@@ -16,8 +16,11 @@
         "https://www.netflix.com/*",
         "https://twitter.com/*",
         "https://x.com/*",
-        "https://www.youtube.com/*"
+        "https://www.youtube.com/*",
+        "https://youtube.com/*",
+        "https://www.youtube-nocookie.com/*"
       ],
+      "all_frames": true,
       "run_at": "document_idle",
       "css": [
         "style.css"

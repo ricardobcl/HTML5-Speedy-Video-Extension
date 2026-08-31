@@ -5,7 +5,8 @@
  * you chose applied to whatever video is playing on the page, installs
  * keyboard shortcuts and shows the current speed in an overlay near the top
  * of the video whenever it changes. The overlay is the only thing it adds to
- * the page.
+ * the page. It runs in every frame, so embedded players (e.g. a Youtube video
+ * on another site) work too, once they have the keyboard focus.
  */
 
 // -------------------------------------------------------------- configuration
@@ -85,8 +86,6 @@ class SpeedyVideo {
   #shortcutsActive = false
 
   start() {
-    // only run in the top frame, so the extension is launched once per page
-    if (window.top !== window) return
     log("Starting Speedy Video")
     this.#watchUrlChanges()
     this.#findVideo()
